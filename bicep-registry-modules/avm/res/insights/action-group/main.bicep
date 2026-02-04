@@ -1,0 +1,193 @@
+metadata name = 'Action Groups'
+metadata description = 'This module deploys an Action Group.'
+
+@description('Required. The name of the action group.')
+param name string
+
+@description('Required. The short name of the action group.')
+param groupShortName string
+
+@description('Optional. Indicates whether this action group is enabled. If an action group is not enabled, then none of its receivers will receive communications.')
+param enabled bool = true
+
+import { lockType } from 'br/public:avm/utl/types/avm-common-types:0.6.1'
+@description('Optional. The lock settings of the service.')
+param lock lockType?
+
+import { roleAssignmentType } from 'br/public:avm/utl/types/avm-common-types:0.6.1'
+@description('Optional. Array of role assignments to create.')
+param roleAssignments roleAssignmentType[]?
+
+@description('Optional. The list of email receivers that are part of this action group.')
+param emailReceivers resourceInput<'Microsoft.Insights/actionGroups@2024-10-01-preview'>.properties.emailReceivers?
+
+@description('Optional. The list of Event Hub receivers that are part of this action group.')
+param eventHubReceivers resourceInput<'Microsoft.Insights/actionGroups@2024-10-01-preview'>.properties.eventHubReceivers?
+
+@description('Optional. The list of SMS receivers that are part of this action group.')
+param smsReceivers resourceInput<'Microsoft.Insights/actionGroups@2024-10-01-preview'>.properties.smsReceivers?
+
+@description('Optional. The list of webhook receivers that are part of this action group.')
+param webhookReceivers resourceInput<'Microsoft.Insights/actionGroups@2024-10-01-preview'>.properties.webhookReceivers?
+
+@description('Optional. The list of ITSM receivers that are part of this action group.')
+param itsmReceivers resourceInput<'Microsoft.Insights/actionGroups@2024-10-01-preview'>.properties.itsmReceivers?
+
+@description('Optional. The list of AzureAppPush receivers that are part of this action group.')
+param azureAppPushReceivers resourceInput<'Microsoft.Insights/actionGroups@2024-10-01-preview'>.properties.azureAppPushReceivers?
+
+@description('Optional. The list of AutomationRunbook receivers that are part of this action group.')
+param automationRunbookReceivers resourceInput<'Microsoft.Insights/actionGroups@2024-10-01-preview'>.properties.automationRunbookReceivers?
+
+@description('Optional. The list of voice receivers that are part of this action group.')
+param voiceReceivers resourceInput<'Microsoft.Insights/actionGroups@2024-10-01-preview'>.properties.voiceReceivers?
+
+@description('Optional. The list of logic app receivers that are part of this action group.')
+param logicAppReceivers logicAppReceiversType[]?
+
+@description('Optional. The list of function receivers that are part of this action group.')
+param azureFunctionReceivers resourceInput<'Microsoft.Insights/actionGroups@2024-10-01-preview'>.properties.azureFunctionReceivers?
+
+@description('Optional. The list of ARM role receivers that are part of this action group. Roles are Azure RBAC roles and only built-in roles are supported.')
+param armRoleReceivers resourceInput<'Microsoft.Insights/actionGroups@2024-10-01-preview'>.properties.armRoleReceivers?
+
+@description('Optional. The list of incident receivers that are part of this action group.')
+param incidentReceivers resourceInput<'Microsoft.Insights/actionGroups@2024-10-01-preview'>.properties.incidentReceivers?
+
+@description('Optional. Tags of the resource.')
+param tags resourceInput<'Microsoft.Insights/actionGroups@2024-10-01-preview'>.tags?
+
+@description('Optional. Enable/Disable usage telemetry for module.')
+param enableTelemetry bool = true
+
+@description('Optional. Location for all resources.')
+param location string = 'global'
+
+var builtInRoleNames = {
+  Contributor: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')
+  Owner: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8e3af657-a8ff-443c-a75c-2fe8c4bcb635')
+  Reader: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')
+  'Role Based Access Control Administrator': subscriptionResourceId(
+    'Microsoft.Authorization/roleDefinitions',
+    'f58310d9-a9f6-439a-9e8d-f62e7b41a168'
+  )
+  'User Access Administrator': subscriptionResourceId(
+    'Microsoft.Authorization/roleDefinitions',
+    '18d7d88d-d35e-4fb5-a5c3-7773c20a72d9'
+  )
+}
+
+var formattedRoleAssignments = [
+  for (roleAssignment, index) in (roleAssignments ?? []): union(roleAssignment, {
+    roleDefinitionId: builtInRoleNames[?roleAssignment.roleDefinitionIdOrName] ?? (contains(
+        roleAssignment.roleDefinitionIdOrName,
+        '/providers/Microsoft.Authorization/roleDefinitions/'
+      )
+      ? roleAssignment.roleDefinitionIdOrName
+      : subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleAssignment.roleDefinitionIdOrName))
+  })
+]
+
+#disable-next-line no-deployments-resources
+resource avmTelemetry 'Microsoft.Resources/deployments@2024-03-01' = if (enableTelemetry) {
+  name: '46d3xbcp.res.insights-actiongroup.${replace('-..--..-', '.', '-')}.${substring(uniqueString(deployment().name, location), 0, 4)}'
+  properties: {
+    mode: 'Incremental'
+    template: {
+      '$schema': 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#'
+      contentVersion: '1.0.0.0'
+      resources: []
+      outputs: {
+        telemetry: {
+          type: 'String'
+          value: 'For more information, see https://aka.ms/avm/TelemetryInfo'
+        }
+      }
+    }
+  }
+}
+
+resource actionGroup 'Microsoft.Insights/actionGroups@2024-10-01-preview' = {
+  name: name
+  location: location
+  tags: tags
+  properties: {
+    groupShortName: groupShortName
+    enabled: enabled
+    emailReceivers: emailReceivers
+    eventHubReceivers: eventHubReceivers
+    smsReceivers: smsReceivers
+    webhookReceivers: webhookReceivers
+    itsmReceivers: itsmReceivers
+    azureAppPushReceivers: azureAppPushReceivers
+    automationRunbookReceivers: automationRunbookReceivers
+    voiceReceivers: voiceReceivers
+    logicAppReceivers: logicAppReceivers
+    azureFunctionReceivers: azureFunctionReceivers
+    armRoleReceivers: armRoleReceivers
+    incidentReceivers: incidentReceivers
+  }
+}
+
+resource actionGroup_lock 'Microsoft.Authorization/locks@2020-05-01' = if (!empty(lock ?? {}) && lock.?kind != 'None') {
+  name: lock.?name ?? 'lock-${name}'
+  properties: {
+    level: lock.?kind ?? ''
+    notes: lock.?notes ?? (lock.?kind == 'CanNotDelete'
+      ? 'Cannot delete resource or child resources.'
+      : 'Cannot delete or modify the resource or child resources.')
+  }
+  scope: actionGroup
+}
+
+resource actionGroup_roleAssignments 'Microsoft.Authorization/roleAssignments@2022-04-01' = [
+  for (roleAssignment, index) in (formattedRoleAssignments ?? []): {
+    name: roleAssignment.?name ?? guid(actionGroup.id, roleAssignment.principalId, roleAssignment.roleDefinitionId)
+    properties: {
+      roleDefinitionId: roleAssignment.roleDefinitionId
+      principalId: roleAssignment.principalId
+      description: roleAssignment.?description
+      principalType: roleAssignment.?principalType
+      condition: roleAssignment.?condition
+      conditionVersion: !empty(roleAssignment.?condition) ? (roleAssignment.?conditionVersion ?? '2.0') : null // Must only be set if condtion is set
+      delegatedManagedIdentityResourceId: roleAssignment.?delegatedManagedIdentityResourceId
+    }
+    scope: actionGroup
+  }
+]
+
+@description('The resource group the action group was deployed into.')
+output resourceGroupName string = resourceGroup().name
+
+@description('The name of the action group.')
+output name string = actionGroup.name
+
+@description('The resource ID of the action group.')
+output resourceId string = actionGroup.id
+
+@description('The location the resource was deployed into.')
+output location string = actionGroup.location
+
+// =============== //
+//   Definitions   //
+// =============== //
+
+@export()
+@description('The type describing a Logic App receiver.')
+type logicAppReceiversType = {
+  @description('Required. The name of the logic app receiver. Names must be unique across all receivers within an action group.')
+  name: string
+
+  @description('Required. The callback url where http request sent to.')
+  @secure()
+  callbackUrl: string
+
+  @description('Required. The azure resource id of the logic app receiver.')
+  resourceId: string
+
+  @description('Optional. The principal id of the managed identity. The value can be "None", "SystemAssigned".')
+  managedIdentity: string?
+
+  @description('Optional. Indicates whether to use common alert schema.')
+  useCommonAlertSchema: bool?
+}

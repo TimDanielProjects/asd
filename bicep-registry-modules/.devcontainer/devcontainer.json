@@ -1,0 +1,45 @@
+{
+  "name": "Ubuntu",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20-bullseye",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "cschleiden.vscode-github-actions",
+        "esbenp.prettier-vscode",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "GitHub.vscode-github-actions",
+        "GitHub.vscode-pull-request-github",
+        "microsoft-dciborow.align-bicep",
+        "ms-azuretools.vscode-bicep",
+        "ms-vsliveshare.vsliveshare",
+        "ms-azuretools.vscode-azureresourcegroups",
+        "ms-vscode-remote.remote-containers",
+        "zokugun.explicit-folding",
+        "ms-azuretools.vscode-azure-github-copilot"
+      ]
+    }
+  },
+  "postCreateCommand": "dotnet tool install -g Azure.Bicep.RegistryModuleTool",
+  "postStartCommand": "",
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/home/node/.dotnet/tools:/home/node/.azure/bin"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/azure-cli:1": {
+      "version": "latest",
+      "installBicep": true
+    },
+    "ghcr.io/devcontainers/features/dotnet:2": {},
+    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/powershell:1": {
+      "modules": ["Az.Accounts", "Az.Resources", "Az.KeyVault", "Pester"]
+    },
+    "ghcr.io/devcontainers-extra/features/prettier:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    // act to run github actions locally
+    "ghcr.io/devcontainers-extra/features/act-asdf:2": {},
+    // for act
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  }
+}

@@ -1,0 +1,848 @@
+# SQL Server Database `[Microsoft.Sql/servers/databases]`
+
+This module deploys an Azure SQL Server Database.
+
+You can reference the module as follows:
+```bicep
+module server 'br/public:avm/res/sql/server/database:<version>' = {
+  params: { (...) }
+}
+```
+For examples, please refer to the [Usage Examples](#usage-examples) section.
+
+## Navigation
+
+- [Resource Types](#Resource-Types)
+- [Parameters](#Parameters)
+- [Outputs](#Outputs)
+- [Cross-referenced modules](#Cross-referenced-modules)
+- [Data Collection](#Data-Collection)
+
+## Resource Types
+
+| Resource Type | API Version | References |
+| :-- | :-- | :-- |
+| `Microsoft.Authorization/locks` | 2020-05-01 | <ul style="padding-left: 0px;"><li>[AzAdvertizer](https://www.azadvertizer.net/azresourcetypes/microsoft.authorization_locks.html)</li><li>[Template reference](https://learn.microsoft.com/en-us/azure/templates/Microsoft.Authorization/2020-05-01/locks)</li></ul> |
+| `Microsoft.Insights/diagnosticSettings` | 2021-05-01-preview | <ul style="padding-left: 0px;"><li>[AzAdvertizer](https://www.azadvertizer.net/azresourcetypes/microsoft.insights_diagnosticsettings.html)</li><li>[Template reference](https://learn.microsoft.com/en-us/azure/templates/Microsoft.Insights/2021-05-01-preview/diagnosticSettings)</li></ul> |
+| `Microsoft.Sql/servers/databases` | 2023-08-01 | <ul style="padding-left: 0px;"><li>[AzAdvertizer](https://www.azadvertizer.net/azresourcetypes/microsoft.sql_servers_databases.html)</li><li>[Template reference](https://learn.microsoft.com/en-us/azure/templates/Microsoft.Sql/2023-08-01/servers/databases)</li></ul> |
+| `Microsoft.Sql/servers/databases/backupLongTermRetentionPolicies` | 2023-08-01 | <ul style="padding-left: 0px;"><li>[AzAdvertizer](https://www.azadvertizer.net/azresourcetypes/microsoft.sql_servers_databases_backuplongtermretentionpolicies.html)</li><li>[Template reference](https://learn.microsoft.com/en-us/azure/templates/Microsoft.Sql/2023-08-01/servers/databases/backupLongTermRetentionPolicies)</li></ul> |
+| `Microsoft.Sql/servers/databases/backupShortTermRetentionPolicies` | 2023-08-01 | <ul style="padding-left: 0px;"><li>[AzAdvertizer](https://www.azadvertizer.net/azresourcetypes/microsoft.sql_servers_databases_backupshorttermretentionpolicies.html)</li><li>[Template reference](https://learn.microsoft.com/en-us/azure/templates/Microsoft.Sql/2023-08-01/servers/databases/backupShortTermRetentionPolicies)</li></ul> |
+
+## Parameters
+
+**Required parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`availabilityZone`](#parameter-availabilityzone) | int | If set to 1, 2 or 3, the availability zone is hardcoded to that value. If set to -1, no zone is defined. Note that the availability zone numbers here are the logical availability zone in your Azure subscription. Different subscriptions might have a different mapping of the physical zone and logical zone. To understand more, please refer to [Physical and logical availability zones](https://learn.microsoft.com/en-us/azure/reliability/availability-zones-overview?tabs=azure-cli#physical-and-logical-availability-zones). |
+| [`name`](#parameter-name) | string | The name of the database. |
+
+**Conditional parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`serverName`](#parameter-servername) | string | The name of the parent SQL Server. Required if the template is used in a standalone deployment. |
+
+**Optional parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`autoPauseDelay`](#parameter-autopausedelay) | int | Time in minutes after which database is automatically paused. A value of -1 means that automatic pause is disabled. |
+| [`backupLongTermRetentionPolicy`](#parameter-backuplongtermretentionpolicy) | object | The long term backup retention policy to create for the database. |
+| [`backupShortTermRetentionPolicy`](#parameter-backupshorttermretentionpolicy) | object | The short term backup retention policy to create for the database. |
+| [`catalogCollation`](#parameter-catalogcollation) | string | Collation of the metadata catalog. |
+| [`collation`](#parameter-collation) | string | The collation of the database. |
+| [`createMode`](#parameter-createmode) | string | Specifies the mode of database creation. |
+| [`customerManagedKey`](#parameter-customermanagedkey) | object | The customer managed key definition for database TDE. |
+| [`diagnosticSettings`](#parameter-diagnosticsettings) | array | The diagnostic settings of the service. |
+| [`elasticPoolResourceId`](#parameter-elasticpoolresourceid) | string | The resource ID of the elastic pool containing this database. |
+| [`enableTelemetry`](#parameter-enabletelemetry) | bool | Enable/Disable usage telemetry for module. |
+| [`federatedClientId`](#parameter-federatedclientid) | string | The Client id used for cross tenant per database CMK scenario. |
+| [`freeLimitExhaustionBehavior`](#parameter-freelimitexhaustionbehavior) | string | Specifies the behavior when monthly free limits are exhausted for the free database. |
+| [`highAvailabilityReplicaCount`](#parameter-highavailabilityreplicacount) | int | The number of readonly secondary replicas associated with the database. |
+| [`isLedgerOn`](#parameter-isledgeron) | bool | Whether or not this database is a ledger database, which means all tables in the database are ledger tables. Note: the value of this property cannot be changed after the database has been created. |
+| [`licenseType`](#parameter-licensetype) | string | The license type to apply for this database. |
+| [`location`](#parameter-location) | string | Location for all resources. |
+| [`lock`](#parameter-lock) | object | The lock settings of the databse. |
+| [`longTermRetentionBackupResourceId`](#parameter-longtermretentionbackupresourceid) | string | The resource identifier of the long term retention backup associated with create operation of this database. |
+| [`maintenanceConfigurationId`](#parameter-maintenanceconfigurationid) | string | Maintenance configuration ID assigned to the database. This configuration defines the period when the maintenance updates will occur. |
+| [`managedIdentities`](#parameter-managedidentities) | object | The managed identity definition for this resource. |
+| [`manualCutover`](#parameter-manualcutover) | bool | Whether or not customer controlled manual cutover needs to be done during Update Database operation to Hyperscale tier. |
+| [`maxSizeBytes`](#parameter-maxsizebytes) | int | The max size of the database expressed in bytes. |
+| [`minCapacity`](#parameter-mincapacity) | string | Minimal capacity that database will always have allocated. |
+| [`performCutover`](#parameter-performcutover) | bool | To trigger customer controlled manual cutover during the wait state while Scaling operation is in progress. |
+| [`preferredEnclaveType`](#parameter-preferredenclavetype) | string | Type of enclave requested on the database i.e. Default or VBS enclaves. |
+| [`readScale`](#parameter-readscale) | string | The state of read-only routing. |
+| [`recoverableDatabaseResourceId`](#parameter-recoverabledatabaseresourceid) | string | The resource identifier of the recoverable database associated with create operation of this database. |
+| [`recoveryServicesRecoveryPointResourceId`](#parameter-recoveryservicesrecoverypointresourceid) | string | The resource identifier of the recovery point associated with create operation of this database. |
+| [`requestedBackupStorageRedundancy`](#parameter-requestedbackupstorageredundancy) | string | The storage account type to be used to store backups for this database. |
+| [`restorableDroppedDatabaseResourceId`](#parameter-restorabledroppeddatabaseresourceid) | string | The resource identifier of the restorable dropped database associated with create operation of this database. |
+| [`restorePointInTime`](#parameter-restorepointintime) | string | Point in time (ISO8601 format) of the source database to restore when createMode set to Restore or PointInTimeRestore. |
+| [`sampleName`](#parameter-samplename) | string | The name of the sample schema to apply when creating this database. |
+| [`secondaryType`](#parameter-secondarytype) | string | The secondary type of the database if it is a secondary. |
+| [`sku`](#parameter-sku) | object | The database SKU. |
+| [`sourceDatabaseDeletionDate`](#parameter-sourcedatabasedeletiondate) | string | The time that the database was deleted when restoring a deleted database. |
+| [`sourceDatabaseResourceId`](#parameter-sourcedatabaseresourceid) | string | The resource identifier of the source database associated with create operation of this database. |
+| [`sourceResourceId`](#parameter-sourceresourceid) | string | The resource identifier of the source associated with the create operation of this database. |
+| [`tags`](#parameter-tags) | object | Tags of the resource. |
+| [`useFreeLimit`](#parameter-usefreelimit) | bool | Whether or not the database uses free monthly limits. Allowed on one database in a subscription. |
+| [`zoneRedundant`](#parameter-zoneredundant) | bool | Whether or not this database is zone redundant. |
+
+### Parameter: `availabilityZone`
+
+If set to 1, 2 or 3, the availability zone is hardcoded to that value. If set to -1, no zone is defined. Note that the availability zone numbers here are the logical availability zone in your Azure subscription. Different subscriptions might have a different mapping of the physical zone and logical zone. To understand more, please refer to [Physical and logical availability zones](https://learn.microsoft.com/en-us/azure/reliability/availability-zones-overview?tabs=azure-cli#physical-and-logical-availability-zones).
+
+- Required: Yes
+- Type: int
+- Allowed:
+  ```Bicep
+  [
+    -1
+    1
+    2
+    3
+  ]
+  ```
+
+### Parameter: `name`
+
+The name of the database.
+
+- Required: Yes
+- Type: string
+
+### Parameter: `serverName`
+
+The name of the parent SQL Server. Required if the template is used in a standalone deployment.
+
+- Required: Yes
+- Type: string
+
+### Parameter: `autoPauseDelay`
+
+Time in minutes after which database is automatically paused. A value of -1 means that automatic pause is disabled.
+
+- Required: No
+- Type: int
+- Default: `-1`
+
+### Parameter: `backupLongTermRetentionPolicy`
+
+The long term backup retention policy to create for the database.
+
+- Required: No
+- Type: object
+
+**Optional parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`monthlyRetention`](#parameter-backuplongtermretentionpolicymonthlyretention) | string | Monthly retention in ISO 8601 duration format. |
+| [`weeklyRetention`](#parameter-backuplongtermretentionpolicyweeklyretention) | string | Weekly retention in ISO 8601 duration format. |
+| [`weekOfYear`](#parameter-backuplongtermretentionpolicyweekofyear) | int | Week of year backup to keep for yearly retention. |
+| [`yearlyRetention`](#parameter-backuplongtermretentionpolicyyearlyretention) | string | Yearly retention in ISO 8601 duration format. |
+
+### Parameter: `backupLongTermRetentionPolicy.monthlyRetention`
+
+Monthly retention in ISO 8601 duration format.
+
+- Required: No
+- Type: string
+
+### Parameter: `backupLongTermRetentionPolicy.weeklyRetention`
+
+Weekly retention in ISO 8601 duration format.
+
+- Required: No
+- Type: string
+
+### Parameter: `backupLongTermRetentionPolicy.weekOfYear`
+
+Week of year backup to keep for yearly retention.
+
+- Required: No
+- Type: int
+
+### Parameter: `backupLongTermRetentionPolicy.yearlyRetention`
+
+Yearly retention in ISO 8601 duration format.
+
+- Required: No
+- Type: string
+
+### Parameter: `backupShortTermRetentionPolicy`
+
+The short term backup retention policy to create for the database.
+
+- Required: No
+- Type: object
+
+**Optional parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`diffBackupIntervalInHours`](#parameter-backupshorttermretentionpolicydiffbackupintervalinhours) | int | Differential backup interval in hours. For Hyperscale tiers this value will be ignored. |
+| [`retentionDays`](#parameter-backupshorttermretentionpolicyretentiondays) | int | Point-in-time retention in days. |
+
+### Parameter: `backupShortTermRetentionPolicy.diffBackupIntervalInHours`
+
+Differential backup interval in hours. For Hyperscale tiers this value will be ignored.
+
+- Required: No
+- Type: int
+
+### Parameter: `backupShortTermRetentionPolicy.retentionDays`
+
+Point-in-time retention in days.
+
+- Required: No
+- Type: int
+
+### Parameter: `catalogCollation`
+
+Collation of the metadata catalog.
+
+- Required: No
+- Type: string
+- Default: `'DATABASE_DEFAULT'`
+
+### Parameter: `collation`
+
+The collation of the database.
+
+- Required: No
+- Type: string
+- Default: `'SQL_Latin1_General_CP1_CI_AS'`
+
+### Parameter: `createMode`
+
+Specifies the mode of database creation.
+
+- Required: No
+- Type: string
+- Default: `'Default'`
+- Allowed:
+  ```Bicep
+  [
+    'Copy'
+    'Default'
+    'OnlineSecondary'
+    'PointInTimeRestore'
+    'Recovery'
+    'Restore'
+    'RestoreExternalBackup'
+    'RestoreExternalBackupSecondary'
+    'RestoreLongTermRetentionBackup'
+    'Secondary'
+  ]
+  ```
+
+### Parameter: `customerManagedKey`
+
+The customer managed key definition for database TDE.
+
+- Required: No
+- Type: object
+
+**Required parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`keyName`](#parameter-customermanagedkeykeyname) | string | The name of the customer managed key to use for encryption. |
+| [`keyVaultResourceId`](#parameter-customermanagedkeykeyvaultresourceid) | string | The resource ID of a key vault to reference a customer managed key for encryption from. |
+
+**Optional parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`autoRotationEnabled`](#parameter-customermanagedkeyautorotationenabled) | bool | Enable or disable auto-rotating to the latest key version. Default is `true`. If set to `false`, the latest key version at the time of the deployment is used. |
+| [`keyVersion`](#parameter-customermanagedkeykeyversion) | string | The version of the customer managed key to reference for encryption. If not provided, using version as per 'autoRotationEnabled' setting. |
+| [`userAssignedIdentityResourceId`](#parameter-customermanagedkeyuserassignedidentityresourceid) | string | User assigned identity to use when fetching the customer managed key. Required if no system assigned identity is available for use. |
+
+### Parameter: `customerManagedKey.keyName`
+
+The name of the customer managed key to use for encryption.
+
+- Required: Yes
+- Type: string
+
+### Parameter: `customerManagedKey.keyVaultResourceId`
+
+The resource ID of a key vault to reference a customer managed key for encryption from.
+
+- Required: Yes
+- Type: string
+
+### Parameter: `customerManagedKey.autoRotationEnabled`
+
+Enable or disable auto-rotating to the latest key version. Default is `true`. If set to `false`, the latest key version at the time of the deployment is used.
+
+- Required: No
+- Type: bool
+
+### Parameter: `customerManagedKey.keyVersion`
+
+The version of the customer managed key to reference for encryption. If not provided, using version as per 'autoRotationEnabled' setting.
+
+- Required: No
+- Type: string
+
+### Parameter: `customerManagedKey.userAssignedIdentityResourceId`
+
+User assigned identity to use when fetching the customer managed key. Required if no system assigned identity is available for use.
+
+- Required: No
+- Type: string
+
+### Parameter: `diagnosticSettings`
+
+The diagnostic settings of the service.
+
+- Required: No
+- Type: array
+
+**Optional parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`eventHubAuthorizationRuleResourceId`](#parameter-diagnosticsettingseventhubauthorizationruleresourceid) | string | Resource ID of the diagnostic event hub authorization rule for the Event Hubs namespace in which the event hub should be created or streamed to. |
+| [`eventHubName`](#parameter-diagnosticsettingseventhubname) | string | Name of the diagnostic event hub within the namespace to which logs are streamed. Without this, an event hub is created for each log category. For security reasons, it is recommended to set diagnostic settings to send data to either storage account, log analytics workspace or event hub. |
+| [`logAnalyticsDestinationType`](#parameter-diagnosticsettingsloganalyticsdestinationtype) | string | A string indicating whether the export to Log Analytics should use the default destination type, i.e. AzureDiagnostics, or use a destination type. |
+| [`logCategoriesAndGroups`](#parameter-diagnosticsettingslogcategoriesandgroups) | array | The name of logs that will be streamed. "allLogs" includes all possible logs for the resource. Set to `[]` to disable log collection. |
+| [`marketplacePartnerResourceId`](#parameter-diagnosticsettingsmarketplacepartnerresourceid) | string | The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic Logs. |
+| [`metricCategories`](#parameter-diagnosticsettingsmetriccategories) | array | The name of metrics that will be streamed. "allMetrics" includes all possible metrics for the resource. Set to `[]` to disable metric collection. |
+| [`name`](#parameter-diagnosticsettingsname) | string | The name of the diagnostic setting. |
+| [`storageAccountResourceId`](#parameter-diagnosticsettingsstorageaccountresourceid) | string | Resource ID of the diagnostic storage account. For security reasons, it is recommended to set diagnostic settings to send data to either storage account, log analytics workspace or event hub. |
+| [`workspaceResourceId`](#parameter-diagnosticsettingsworkspaceresourceid) | string | Resource ID of the diagnostic log analytics workspace. For security reasons, it is recommended to set diagnostic settings to send data to either storage account, log analytics workspace or event hub. |
+
+### Parameter: `diagnosticSettings.eventHubAuthorizationRuleResourceId`
+
+Resource ID of the diagnostic event hub authorization rule for the Event Hubs namespace in which the event hub should be created or streamed to.
+
+- Required: No
+- Type: string
+
+### Parameter: `diagnosticSettings.eventHubName`
+
+Name of the diagnostic event hub within the namespace to which logs are streamed. Without this, an event hub is created for each log category. For security reasons, it is recommended to set diagnostic settings to send data to either storage account, log analytics workspace or event hub.
+
+- Required: No
+- Type: string
+
+### Parameter: `diagnosticSettings.logAnalyticsDestinationType`
+
+A string indicating whether the export to Log Analytics should use the default destination type, i.e. AzureDiagnostics, or use a destination type.
+
+- Required: No
+- Type: string
+- Allowed:
+  ```Bicep
+  [
+    'AzureDiagnostics'
+    'Dedicated'
+  ]
+  ```
+
+### Parameter: `diagnosticSettings.logCategoriesAndGroups`
+
+The name of logs that will be streamed. "allLogs" includes all possible logs for the resource. Set to `[]` to disable log collection.
+
+- Required: No
+- Type: array
+
+**Optional parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`category`](#parameter-diagnosticsettingslogcategoriesandgroupscategory) | string | Name of a Diagnostic Log category for a resource type this setting is applied to. Set the specific logs to collect here. |
+| [`categoryGroup`](#parameter-diagnosticsettingslogcategoriesandgroupscategorygroup) | string | Name of a Diagnostic Log category group for a resource type this setting is applied to. Set to `allLogs` to collect all logs. |
+| [`enabled`](#parameter-diagnosticsettingslogcategoriesandgroupsenabled) | bool | Enable or disable the category explicitly. Default is `true`. |
+
+### Parameter: `diagnosticSettings.logCategoriesAndGroups.category`
+
+Name of a Diagnostic Log category for a resource type this setting is applied to. Set the specific logs to collect here.
+
+- Required: No
+- Type: string
+
+### Parameter: `diagnosticSettings.logCategoriesAndGroups.categoryGroup`
+
+Name of a Diagnostic Log category group for a resource type this setting is applied to. Set to `allLogs` to collect all logs.
+
+- Required: No
+- Type: string
+
+### Parameter: `diagnosticSettings.logCategoriesAndGroups.enabled`
+
+Enable or disable the category explicitly. Default is `true`.
+
+- Required: No
+- Type: bool
+
+### Parameter: `diagnosticSettings.marketplacePartnerResourceId`
+
+The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic Logs.
+
+- Required: No
+- Type: string
+
+### Parameter: `diagnosticSettings.metricCategories`
+
+The name of metrics that will be streamed. "allMetrics" includes all possible metrics for the resource. Set to `[]` to disable metric collection.
+
+- Required: No
+- Type: array
+
+**Required parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`category`](#parameter-diagnosticsettingsmetriccategoriescategory) | string | Name of a Diagnostic Metric category for a resource type this setting is applied to. Set to `AllMetrics` to collect all metrics. |
+
+**Optional parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`enabled`](#parameter-diagnosticsettingsmetriccategoriesenabled) | bool | Enable or disable the category explicitly. Default is `true`. |
+
+### Parameter: `diagnosticSettings.metricCategories.category`
+
+Name of a Diagnostic Metric category for a resource type this setting is applied to. Set to `AllMetrics` to collect all metrics.
+
+- Required: Yes
+- Type: string
+
+### Parameter: `diagnosticSettings.metricCategories.enabled`
+
+Enable or disable the category explicitly. Default is `true`.
+
+- Required: No
+- Type: bool
+
+### Parameter: `diagnosticSettings.name`
+
+The name of the diagnostic setting.
+
+- Required: No
+- Type: string
+
+### Parameter: `diagnosticSettings.storageAccountResourceId`
+
+Resource ID of the diagnostic storage account. For security reasons, it is recommended to set diagnostic settings to send data to either storage account, log analytics workspace or event hub.
+
+- Required: No
+- Type: string
+
+### Parameter: `diagnosticSettings.workspaceResourceId`
+
+Resource ID of the diagnostic log analytics workspace. For security reasons, it is recommended to set diagnostic settings to send data to either storage account, log analytics workspace or event hub.
+
+- Required: No
+- Type: string
+
+### Parameter: `elasticPoolResourceId`
+
+The resource ID of the elastic pool containing this database.
+
+- Required: No
+- Type: string
+
+### Parameter: `enableTelemetry`
+
+Enable/Disable usage telemetry for module.
+
+- Required: No
+- Type: bool
+- Default: `True`
+
+### Parameter: `federatedClientId`
+
+The Client id used for cross tenant per database CMK scenario.
+
+- Required: No
+- Type: string
+
+### Parameter: `freeLimitExhaustionBehavior`
+
+Specifies the behavior when monthly free limits are exhausted for the free database.
+
+- Required: No
+- Type: string
+- Allowed:
+  ```Bicep
+  [
+    'AutoPause'
+    'BillOverUsage'
+  ]
+  ```
+
+### Parameter: `highAvailabilityReplicaCount`
+
+The number of readonly secondary replicas associated with the database.
+
+- Required: No
+- Type: int
+- Default: `0`
+
+### Parameter: `isLedgerOn`
+
+Whether or not this database is a ledger database, which means all tables in the database are ledger tables. Note: the value of this property cannot be changed after the database has been created.
+
+- Required: No
+- Type: bool
+- Default: `False`
+
+### Parameter: `licenseType`
+
+The license type to apply for this database.
+
+- Required: No
+- Type: string
+- Allowed:
+  ```Bicep
+  [
+    'BasePrice'
+    'LicenseIncluded'
+  ]
+  ```
+
+### Parameter: `location`
+
+Location for all resources.
+
+- Required: No
+- Type: string
+- Default: `[resourceGroup().location]`
+
+### Parameter: `lock`
+
+The lock settings of the databse.
+
+- Required: No
+- Type: object
+
+**Optional parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`kind`](#parameter-lockkind) | string | Specify the type of lock. |
+| [`name`](#parameter-lockname) | string | Specify the name of lock. |
+| [`notes`](#parameter-locknotes) | string | Specify the notes of the lock. |
+
+### Parameter: `lock.kind`
+
+Specify the type of lock.
+
+- Required: No
+- Type: string
+- Allowed:
+  ```Bicep
+  [
+    'CanNotDelete'
+    'None'
+    'ReadOnly'
+  ]
+  ```
+
+### Parameter: `lock.name`
+
+Specify the name of lock.
+
+- Required: No
+- Type: string
+
+### Parameter: `lock.notes`
+
+Specify the notes of the lock.
+
+- Required: No
+- Type: string
+
+### Parameter: `longTermRetentionBackupResourceId`
+
+The resource identifier of the long term retention backup associated with create operation of this database.
+
+- Required: No
+- Type: string
+
+### Parameter: `maintenanceConfigurationId`
+
+Maintenance configuration ID assigned to the database. This configuration defines the period when the maintenance updates will occur.
+
+- Required: No
+- Type: string
+
+### Parameter: `managedIdentities`
+
+The managed identity definition for this resource.
+
+- Required: No
+- Type: object
+
+**Optional parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`userAssignedResourceIds`](#parameter-managedidentitiesuserassignedresourceids) | array | The resource ID(s) to assign to the resource. Required if a user assigned identity is used for encryption. |
+
+### Parameter: `managedIdentities.userAssignedResourceIds`
+
+The resource ID(s) to assign to the resource. Required if a user assigned identity is used for encryption.
+
+- Required: No
+- Type: array
+
+### Parameter: `manualCutover`
+
+Whether or not customer controlled manual cutover needs to be done during Update Database operation to Hyperscale tier.
+
+- Required: No
+- Type: bool
+
+### Parameter: `maxSizeBytes`
+
+The max size of the database expressed in bytes.
+
+- Required: No
+- Type: int
+- Default: `34359738368`
+
+### Parameter: `minCapacity`
+
+Minimal capacity that database will always have allocated.
+
+- Required: No
+- Type: string
+- Default: `'0'`
+
+### Parameter: `performCutover`
+
+To trigger customer controlled manual cutover during the wait state while Scaling operation is in progress.
+
+- Required: No
+- Type: bool
+
+### Parameter: `preferredEnclaveType`
+
+Type of enclave requested on the database i.e. Default or VBS enclaves.
+
+- Required: No
+- Type: string
+- Allowed:
+  ```Bicep
+  [
+    'Default'
+    'VBS'
+  ]
+  ```
+
+### Parameter: `readScale`
+
+The state of read-only routing.
+
+- Required: No
+- Type: string
+- Default: `'Disabled'`
+- Allowed:
+  ```Bicep
+  [
+    'Disabled'
+    'Enabled'
+  ]
+  ```
+
+### Parameter: `recoverableDatabaseResourceId`
+
+The resource identifier of the recoverable database associated with create operation of this database.
+
+- Required: No
+- Type: string
+
+### Parameter: `recoveryServicesRecoveryPointResourceId`
+
+The resource identifier of the recovery point associated with create operation of this database.
+
+- Required: No
+- Type: string
+
+### Parameter: `requestedBackupStorageRedundancy`
+
+The storage account type to be used to store backups for this database.
+
+- Required: No
+- Type: string
+- Default: `'Local'`
+- Allowed:
+  ```Bicep
+  [
+    'Geo'
+    'GeoZone'
+    'Local'
+    'Zone'
+  ]
+  ```
+
+### Parameter: `restorableDroppedDatabaseResourceId`
+
+The resource identifier of the restorable dropped database associated with create operation of this database.
+
+- Required: No
+- Type: string
+
+### Parameter: `restorePointInTime`
+
+Point in time (ISO8601 format) of the source database to restore when createMode set to Restore or PointInTimeRestore.
+
+- Required: No
+- Type: string
+
+### Parameter: `sampleName`
+
+The name of the sample schema to apply when creating this database.
+
+- Required: No
+- Type: string
+- Default: `''`
+
+### Parameter: `secondaryType`
+
+The secondary type of the database if it is a secondary.
+
+- Required: No
+- Type: string
+- Allowed:
+  ```Bicep
+  [
+    'Geo'
+    'Named'
+    'Standby'
+  ]
+  ```
+
+### Parameter: `sku`
+
+The database SKU.
+
+- Required: No
+- Type: object
+- Default:
+  ```Bicep
+  {
+      name: 'GP_Gen5_2'
+      tier: 'GeneralPurpose'
+  }
+  ```
+
+**Required parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`name`](#parameter-skuname) | string | The name of the SKU, typically, a letter + Number code, e.g. P3. |
+
+**Optional parameters**
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| [`capacity`](#parameter-skucapacity) | int | The capacity of the particular SKU. |
+| [`family`](#parameter-skufamily) | string | If the service has different generations of hardware, for the same SKU, then that can be captured here. |
+| [`size`](#parameter-skusize) | string | Size of the particular SKU. |
+| [`tier`](#parameter-skutier) | string | The tier or edition of the particular SKU, e.g. Basic, Premium. |
+
+### Parameter: `sku.name`
+
+The name of the SKU, typically, a letter + Number code, e.g. P3.
+
+- Required: Yes
+- Type: string
+
+### Parameter: `sku.capacity`
+
+The capacity of the particular SKU.
+
+- Required: No
+- Type: int
+
+### Parameter: `sku.family`
+
+If the service has different generations of hardware, for the same SKU, then that can be captured here.
+
+- Required: No
+- Type: string
+
+### Parameter: `sku.size`
+
+Size of the particular SKU.
+
+- Required: No
+- Type: string
+
+### Parameter: `sku.tier`
+
+The tier or edition of the particular SKU, e.g. Basic, Premium.
+
+- Required: No
+- Type: string
+
+### Parameter: `sourceDatabaseDeletionDate`
+
+The time that the database was deleted when restoring a deleted database.
+
+- Required: No
+- Type: string
+
+### Parameter: `sourceDatabaseResourceId`
+
+The resource identifier of the source database associated with create operation of this database.
+
+- Required: No
+- Type: string
+
+### Parameter: `sourceResourceId`
+
+The resource identifier of the source associated with the create operation of this database.
+
+- Required: No
+- Type: string
+
+### Parameter: `tags`
+
+Tags of the resource.
+
+- Required: No
+- Type: object
+
+### Parameter: `useFreeLimit`
+
+Whether or not the database uses free monthly limits. Allowed on one database in a subscription.
+
+- Required: No
+- Type: bool
+
+### Parameter: `zoneRedundant`
+
+Whether or not this database is zone redundant.
+
+- Required: No
+- Type: bool
+- Default: `True`
+
+## Outputs
+
+| Output | Type | Description |
+| :-- | :-- | :-- |
+| `location` | string | The location the resource was deployed into. |
+| `name` | string | The name of the deployed database. |
+| `resourceGroupName` | string | The resource group of the deployed database. |
+| `resourceId` | string | The resource ID of the deployed database. |
+
+## Cross-referenced modules
+
+This section gives you an overview of all local-referenced module files (i.e., other modules that are referenced in this module) and all remote-referenced files (i.e., Bicep modules that are referenced from a Bicep Registry or Template Specs).
+
+| Reference | Type |
+| :-- | :-- |
+| `br/public:avm/utl/types/avm-common-types:0.6.1` | Remote reference |
+
+## Data Collection
+
+The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the [repository](https://aka.ms/avm/telemetry). There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft's privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.

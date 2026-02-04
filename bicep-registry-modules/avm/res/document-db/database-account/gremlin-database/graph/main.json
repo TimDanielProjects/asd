@@ -1,0 +1,116 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "languageVersion": "2.0",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.38.33.27573",
+      "templateHash": "15097132107382000570"
+    },
+    "name": "DocumentDB Database Accounts Gremlin Databases Graphs",
+    "description": "This module deploys a DocumentDB Database Accounts Gremlin Database Graph."
+  },
+  "parameters": {
+    "name": {
+      "type": "string",
+      "metadata": {
+        "description": "Required. Name of the graph."
+      }
+    },
+    "tags": {
+      "type": "object",
+      "metadata": {
+        "__bicep_resource_derived_type!": {
+          "source": "Microsoft.DocumentDB/databaseAccounts/gremlinDatabases/graphs@2025-04-15#properties/tags"
+        },
+        "description": "Optional. Tags of the Gremlin graph resource."
+      },
+      "nullable": true
+    },
+    "databaseAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Conditional. The name of the parent Database Account. Required if the template is used in a standalone deployment."
+      }
+    },
+    "gremlinDatabaseName": {
+      "type": "string",
+      "metadata": {
+        "description": "Conditional. The name of the parent Gremlin Database. Required if the template is used in a standalone deployment."
+      }
+    },
+    "indexingPolicy": {
+      "type": "object",
+      "metadata": {
+        "__bicep_resource_derived_type!": {
+          "source": "Microsoft.DocumentDB/databaseAccounts/gremlinDatabases/graphs@2025-04-15#properties/properties/properties/resource/properties/indexingPolicy"
+        },
+        "description": "Optional. Indexing policy of the graph."
+      },
+      "nullable": true
+    },
+    "partitionKeyPaths": {
+      "type": "array",
+      "metadata": {
+        "__bicep_resource_derived_type!": {
+          "source": "Microsoft.DocumentDB/databaseAccounts/gremlinDatabases/graphs@2025-04-15#properties/properties/properties/resource/properties/partitionKey/properties/paths"
+        },
+        "description": "Optional. List of paths using which data within the container can be partitioned."
+      },
+      "nullable": true
+    }
+  },
+  "resources": {
+    "databaseAccount::gremlinDatabase": {
+      "existing": true,
+      "type": "Microsoft.DocumentDB/databaseAccounts/gremlinDatabases",
+      "apiVersion": "2025-04-15",
+      "name": "[format('{0}/{1}', parameters('databaseAccountName'), parameters('gremlinDatabaseName'))]"
+    },
+    "databaseAccount": {
+      "existing": true,
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2025-04-15",
+      "name": "[parameters('databaseAccountName')]"
+    },
+    "gremlinGraph": {
+      "type": "Microsoft.DocumentDB/databaseAccounts/gremlinDatabases/graphs",
+      "apiVersion": "2025-04-15",
+      "name": "[format('{0}/{1}/{2}', parameters('databaseAccountName'), parameters('gremlinDatabaseName'), parameters('name'))]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "resource": {
+          "id": "[parameters('name')]",
+          "indexingPolicy": "[parameters('indexingPolicy')]",
+          "partitionKey": {
+            "paths": "[parameters('partitionKeyPaths')]"
+          }
+        }
+      }
+    }
+  },
+  "outputs": {
+    "name": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the graph."
+      },
+      "value": "[parameters('name')]"
+    },
+    "resourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "The resource ID of the graph."
+      },
+      "value": "[resourceId('Microsoft.DocumentDB/databaseAccounts/gremlinDatabases/graphs', parameters('databaseAccountName'), parameters('gremlinDatabaseName'), parameters('name'))]"
+    },
+    "resourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the resource group the graph was created in."
+      },
+      "value": "[resourceGroup().name]"
+    }
+  }
+}

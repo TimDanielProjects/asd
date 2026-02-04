@@ -1,0 +1,117 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.39.26.7824",
+      "templateHash": "451166585622147891"
+    },
+    "name": "Load Balancer Backend Address Pools",
+    "description": "This module deploys a Load Balancer Backend Address Pools."
+  },
+  "parameters": {
+    "loadBalancerName": {
+      "type": "string",
+      "metadata": {
+        "description": "Conditional. The name of the parent load balancer. Required if the template is used in a standalone deployment."
+      }
+    },
+    "name": {
+      "type": "string",
+      "metadata": {
+        "description": "Required. The name of the backend address pool."
+      }
+    },
+    "loadBalancerBackendAddresses": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Optional. An array of backend addresses."
+      }
+    },
+    "tunnelInterfaces": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Optional. An array of gateway load balancer tunnel interfaces."
+      }
+    },
+    "drainPeriodInSeconds": {
+      "type": "int",
+      "defaultValue": 0,
+      "metadata": {
+        "description": "Optional. Amount of seconds Load Balancer waits for before sending RESET to client and backend address. if value is 0 then this property will be set to null. Subscription must register the feature Microsoft.Network/SLBAllowConnectionDraining before using this property."
+      }
+    },
+    "syncMode": {
+      "type": "string",
+      "defaultValue": "",
+      "allowedValues": [
+        "",
+        "Automatic",
+        "Manual"
+      ],
+      "metadata": {
+        "description": "Optional. Backend address synchronous mode for the backend pool."
+      }
+    },
+    "virtualNetworkResourceId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Optional. The resource Id of the virtual network."
+      }
+    },
+    "backendMembershipMode": {
+      "type": "string",
+      "defaultValue": "None",
+      "allowedValues": [
+        "NIC",
+        "BackendAddress",
+        "None"
+      ],
+      "metadata": {
+        "description": "Optional. How backend pool members are managed. NIC = via NIC IP configs, BackendAddress = via backend addresses, None = empty pool."
+      }
+    }
+  },
+  "resources": [
+    {
+      "condition": "[not(equals(parameters('backendMembershipMode'), 'NIC'))]",
+      "type": "Microsoft.Network/loadBalancers/backendAddressPools",
+      "apiVersion": "2024-10-01",
+      "name": "[format('{0}/{1}', parameters('loadBalancerName'), parameters('name'))]",
+      "properties": {
+        "loadBalancerBackendAddresses": "[if(equals(parameters('backendMembershipMode'), 'BackendAddress'), parameters('loadBalancerBackendAddresses'), null())]",
+        "tunnelInterfaces": "[parameters('tunnelInterfaces')]",
+        "drainPeriodInSeconds": "[if(not(equals(parameters('drainPeriodInSeconds'), 0)), parameters('drainPeriodInSeconds'), null())]",
+        "syncMode": "[if(not(empty(parameters('syncMode'))), parameters('syncMode'), null())]",
+        "virtualNetwork": "[if(not(empty(parameters('virtualNetworkResourceId'))), createObject('id', parameters('virtualNetworkResourceId')), null())]"
+      }
+    }
+  ],
+  "outputs": {
+    "name": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the backend address pool."
+      },
+      "value": "[if(not(equals(parameters('backendMembershipMode'), 'NIC')), parameters('name'), parameters('name'))]"
+    },
+    "resourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "The resource ID of the backend address pool."
+      },
+      "value": "[if(not(equals(parameters('backendMembershipMode'), 'NIC')), resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('loadBalancerName'), parameters('name')), format('{0}/backendAddressPools/{1}', resourceId('Microsoft.Network/loadBalancers', parameters('loadBalancerName')), parameters('name')))]"
+    },
+    "resourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "The resource group the backend address pool was deployed into."
+      },
+      "value": "[resourceGroup().name]"
+    }
+  }
+}
