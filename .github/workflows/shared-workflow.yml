@@ -1,0 +1,48 @@
+name: shared Workflow
+on:
+  workflow_dispatch:
+    inputs:
+      integrationId:
+        description: "Integration identifier"
+        required: true
+        default: "shared"
+        type: string
+
+jobs:
+  # Build job: prepares and publishes all integration artifacts
+  build:
+    uses: ./.github/workflows/build-integration-env.yml
+    secrets: inherit
+    with:
+      integration_id: ${{ inputs.integrationId }}
+
+  deploy:
+    needs: build
+    secrets: inherit
+    uses: ./.github/workflows/deploy-integration-env.yml
+    with:
+      integration_id: ${{ inputs.integrationId }}
+      bicep_file: ${{ inputs.integrationId }}/Deployment/Bicep/Main.bicep
+      functions_package: ${{ inputs.integrationId }}/Functions
+      logicapp_definition: ${{ inputs.integrationId }}/LogicAppWorkspace
+
+  summary:
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Integration Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Integration ID:** ${{ inputs.integrationId }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Status:** ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Deploy Status:** ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.build.result }}" = "success" ] && [ "${{ needs.deploy.result }}" = "success" ]; then
+            echo "✅ **Deployment completed successfully!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Deployment failed. Check the logs above.**" >> $GITHUB_STEP_SUMMARY
+          fi
+

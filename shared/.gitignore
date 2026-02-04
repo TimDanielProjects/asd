@@ -1,0 +1,5 @@
+.vscode/settings.json
+/LogicAppWorkspace/Function/bin
+/LogicAppWorkspace/Function/obj
+LogicAppWorkspace/LogicApp/workflow-designtime/local.settings.json
+LogicAppWorkspace/LogicApp/local.settings.json
