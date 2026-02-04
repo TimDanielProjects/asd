@@ -1,0 +1,53 @@
+name: 'Deploy Setup.bicep and Capture Outputs'
+description: 'Deploys Setup.bicep and captures storage and key vault outputs.'
+runs:
+  using: 'composite'
+  steps:
+    - name: Deploy Setup.bicep and capture outputs
+      id: deploy_setup
+      shell: bash
+      run: |
+        set -e
+        echo "Starting Bicep deployment..."
+        result=$(az deployment group create \
+          --resource-group ${{ inputs.resource_group }} \
+          --template-file ${{ inputs.template_file }} \
+          --parameters environmentSuffix=${{ inputs.environment_suffix }} regionSuffix=${{ inputs.region_suffix }} organisationSuffix=${{ inputs.organisation_suffix }} integrationId=${{ inputs.integration_id }} \
+          --query "properties.outputs" -o json)
+        echo "Raw deployment result:"
+        echo "$result"
+        if echo "$result" | jq . >/dev/null 2>&1; then
+          storageAccountName=$(echo "$result" | jq -r '.storageAccountName.value // empty')
+          keyVaultName=$(echo "$result" | jq -r '.keyVaultName.value // empty')
+          echo "storageAccountName=$storageAccountName" >> $GITHUB_OUTPUT
+          echo "keyVaultName=$keyVaultName" >> $GITHUB_OUTPUT
+        else
+          echo "Deployment output is not valid JSON. See above for error."
+          exit 1
+        fi
+inputs:
+  resource_group:
+    description: 'Resource group name.'
+    required: true
+  template_file:
+    description: 'Path to the Setup.bicep template file.'
+    required: true
+  environment_suffix:
+    description: 'Environment suffix.'
+    required: true
+  region_suffix:
+    description: 'Region suffix.'
+    required: true
+  organisation_suffix:
+    description: 'Organisation suffix.'
+    required: true
+  integration_id:
+    description: 'Integration id.'
+    required: true
+outputs:
+  storageAccountName:
+    description: 'The name of the created storage account'
+    value: ${{ steps.deploy_setup.outputs.storageAccountName }}
+  keyVaultName:
+    description: 'The name of the created key vault'
+    value: ${{ steps.deploy_setup.outputs.keyVaultName }}

@@ -1,0 +1,49 @@
+name: 'Azure Login and Environment Setup'
+description: 'Logs in to Azure and sets up environment variables.'
+outputs:
+  RG_NAME:
+    description: 'Resource group name'
+    value: ${{ steps.set_rg.outputs.RG_NAME }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ inputs.azure_credentials }}
+
+    - name: Extract app registration and subscription ID
+      id: extract_ids
+      shell: bash
+      run: |
+        echo "APP_REGISTRATION_APPLICATION_ID=$(echo '${{ inputs.azure_credentials }}' | jq -r .clientId)" >> $GITHUB_ENV
+        echo "AZURE_SUBSCRIPTION_ID=$(echo '${{ inputs.azure_credentials }}' | jq -r .subscriptionId)" >> $GITHUB_ENV
+
+    - name: Set environment suffix
+      shell: bash
+      run: echo "ENV_SUFFIX=${{ inputs.env_suffix }}" >> $GITHUB_ENV
+
+    - name: Set resource group name
+      id: set_rg
+      shell: bash
+      run: |
+        RG_NAME="${{ inputs.ORGANISATION_SUFFIX }}-int-${{ inputs.integration_id }}-rg-${{ inputs.REGION_SUFFIX }}-${{ inputs.env_suffix }}"
+        echo "RG_NAME=$RG_NAME" >> $GITHUB_ENV
+        echo "RG_NAME=$RG_NAME" >> $GITHUB_OUTPUT
+
+inputs:
+  azure_credentials:
+    description: 'Azure credentials secret JSON'
+    required: true
+  env_suffix:
+    description: 'Environment suffix I.E. (dev, test, prod...)'
+    required: true
+  ORGANISATION_SUFFIX:
+    description: 'Organisation suffix'
+    required: true
+  REGION_SUFFIX:
+    description: 'Region suffix'
+    required: true
+  integration_id:
+    description: 'Integration ID'
+    required: true

@@ -1,0 +1,90 @@
+name: 'Deploy Bicep Template and Capture Outputs'
+description: 'Deploys a Bicep template and captures outputs for Logic App and Function App.'
+runs:
+  using: 'composite'
+  steps:
+    - name: Create resource group if it doesn't exist
+      shell: bash
+      run: |
+        echo "Checking if resource group '${{ inputs.RG_NAME }}' exists..."
+        if ! az group show --name "${{ inputs.RG_NAME }}" --output none 2>/dev/null; then
+          echo "Resource group '${{ inputs.RG_NAME }}' does not exist. Creating it..."
+          az group create \
+            --name "${{ inputs.RG_NAME }}" \
+            --location "${{ inputs.RESOURCE_LOCATION }}"
+          echo "Resource group '${{ inputs.RG_NAME }}' created successfully."
+        else
+          echo "Resource group '${{ inputs.RG_NAME }}' already exists."
+        fi
+    
+    - name: Deploy Main.bicep and capture outputs
+      id: deploy_main
+      shell: bash
+      run: |
+        echo "Deploying to resource group: ${{ inputs.RG_NAME }}"
+        result=$(az deployment group create \
+          --resource-group "${{ inputs.RG_NAME }}" \
+          --template-file "${{ inputs.bicep_file }}" \
+          --parameters \
+            environmentSuffix="${{ inputs.ENV_SUFFIX }}" \
+            regionSuffix="${{ inputs.REGION_SUFFIX }}" \
+            organisationSuffix="${{ inputs.ORGANISATION_SUFFIX }}" \
+            integrationId="${{ inputs.integration_id }}" \
+            ApplicationInsightsLoggingEnabled="${{ inputs.APPLICATION_INSIGHTS_LOGGING_ENABLED }}" \
+            NodiniteLoggingEnabled="${{ inputs.NODINITE_LOGGING_ENABLED }}" \
+            location="${{ inputs.RESOURCE_LOCATION }}" \
+          --query "properties.outputs" -o json)
+        echo "Raw deployment result:"
+        echo "$result"
+        
+        if echo "$result" | jq . >/dev/null 2>&1; then
+          logicAppStandardName=$(echo "$result" | jq -r '.logicAppStandardName.value // empty')
+          functionAppName=$(echo "$result" | jq -r '.functionAppName.value // empty')
+
+          if [ ! -z "$logicAppStandardName" ]; then
+            echo "logicAppStandardName=$logicAppStandardName" >> $GITHUB_OUTPUT
+            echo "Logic App Standard Name: $logicAppStandardName"
+          fi
+
+          if [ ! -z "$functionAppName" ]; then
+            echo "functionAppName=$functionAppName" >> $GITHUB_OUTPUT
+            echo "Function App Name: $functionAppName"
+          fi
+        else
+          echo "Deployment output is not valid JSON. Skipping output extraction."
+        fi
+inputs:
+  bicep_file:
+    description: 'Path to the Bicep template file.'
+    required: true
+  ENV_SUFFIX:
+    description: 'Environment suffix'
+    required: true
+  REGION_SUFFIX:
+    description: 'Region suffix'
+    required: true
+  ORGANISATION_SUFFIX:
+    description: 'Organisation suffix'
+    required: true
+  integration_id:
+    description: 'Integration ID'
+    required: true
+  APPLICATION_INSIGHTS_LOGGING_ENABLED:
+    description: 'Application Insights logging enabled'
+    required: true
+  NODINITE_LOGGING_ENABLED:
+    description: 'Nodinite logging enabled'
+    required: true
+  RESOURCE_LOCATION:
+    description: 'Resource location'
+    required: true
+  RG_NAME:
+    description: 'Resource group name'
+    required: true
+outputs:
+  LOGIC_APP_STANDARD_NAME:
+    description: 'Name of the deployed Logic App Standard'
+    value: ${{ steps.deploy_main.outputs.logicAppStandardName }}
+  FUNCTION_APP_NAME:
+    description: 'Name of the deployed Function App'
+    value: ${{ steps.deploy_main.outputs.functionAppName }}

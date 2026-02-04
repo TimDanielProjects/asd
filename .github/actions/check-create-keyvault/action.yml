@@ -1,0 +1,19 @@
+name: 'Check for/Create KeyVault'
+description: 'Checks for or creates the specified KeyVault.'
+runs:
+  using: 'composite'
+  steps:
+    - name: Check for/create KeyVault
+      shell: bash
+      run: |
+        bash publish/generic-script-files/CheckForKeyVault.sh ${{ inputs.resource_group }} ${{ inputs.keyvault_name }} ${{ inputs.resource_location }}
+inputs:
+  resource_group:
+    description: 'Resource group name.'
+    required: true
+  keyvault_name:
+    description: 'KeyVault name.'
+    required: true
+  resource_location:
+    description: 'Resource location.'
+    required: true

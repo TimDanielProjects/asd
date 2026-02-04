@@ -1,0 +1,31 @@
+name: 'Copy Azure Functions'
+description: 'Copies Azure Functions to the publish directory.'
+inputs:
+  integration_id:
+    description: 'Integration identifier'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.integration_id }}" ]; then
+          echo "Error: integration_id is required"
+          exit 1
+        fi
+    
+    - name: Copy Azure Functions
+      shell: bash
+      run: |
+        echo "Copying Azure Functions for integration: ${{ inputs.integration_id }}"
+        mkdir -p "publish/${{ inputs.integration_id }}/Functions"
+        
+        if [ -d "${{ inputs.integration_id }}/Functions" ]; then
+          cp -r "${{ inputs.integration_id }}/Functions"/* "publish/${{ inputs.integration_id }}/Functions/"
+          echo "✅ Successfully copied Azure Functions"
+        else
+          echo "⚠️ Warning: Functions directory not found for integration ${{ inputs.integration_id }}"
+          echo "Creating empty functions directory structure"
+          mkdir -p "publish/${{ inputs.integration_id }}/Functions"
+        fi

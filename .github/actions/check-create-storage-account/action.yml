@@ -1,0 +1,23 @@
+name: 'Check for/Create Storage Account'
+description: 'Checks for or creates the specified storage account.'
+runs:
+  using: 'composite'
+  steps:
+    - name: Check for/create storage account
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.storage_account_name }}" ]; then
+          echo "Error: STORAGE_ACCOUNT_NAME is not set. Failing early."
+          exit 1
+        fi
+        bash publish/generic-script-files/CheckForStorageAccount.sh ${{ inputs.resource_group }} ${{ inputs.storage_account_name }} ${{ inputs.resource_location }}
+inputs:
+  resource_group:
+    description: 'Resource group name.'
+    required: true
+  storage_account_name:
+    description: 'Storage account name.'
+    required: true
+  resource_location:
+    description: 'Resource location.'
+    required: true

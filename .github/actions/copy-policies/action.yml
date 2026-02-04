@@ -1,0 +1,38 @@
+name: 'Copy Policy Files'
+description: 'Copies policy files (global and integration-specific) to the publish directory.'
+inputs:
+  integration_id:
+    description: 'Integration identifier'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Copy Policy Files
+      shell: bash
+      run: |
+        mkdir -p publish/Policies
+        if [ -d "Policies" ]; then
+          cp -r "Policies"/* "publish/Policies/"
+        fi
+        if [ -d "${{ inputs.integration_id }}/Deployment/Policies" ]; then
+          cp -r "${{ inputs.integration_id }}/Deployment/Policies"/* "publish/Policies/"
+        elif [ -d "${{ inputs.integration_id }}/deployment/Policies" ]; then
+          cp -r "${{ inputs.integration_id }}/deployment/Policies"/* "publish/Policies/"
+        else
+          echo "Warning: No policy files found for integration ${{ inputs.integration_id }}"
+        fi
+
+    - name: Copy generic-policy-files Content
+      shell: bash
+      run: |
+        echo "Copying generic-policy-files"
+        mkdir -p "publish/generic-policy-files"
+        
+        if [ -d "generic-policy-files" ]; then
+          cp -r "generic-policy-files"/* "publish/generic-policy-files/"
+          echo "✅ Successfully copied generic-policy-files"
+        else
+          echo "⚠️ Warning: generic-policy-files directory not found"
+          echo "Creating empty scripts directory structure"
+          mkdir -p "publish/generic-policy-files"
+        fi

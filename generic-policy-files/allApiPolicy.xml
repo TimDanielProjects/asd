@@ -1,0 +1,14 @@
+<policies>
+    <inbound>
+        <include-fragment fragment-id="genericNodiniteLoggingPolicyFragment" />
+    </inbound>
+    <backend>
+        <forward-request />
+    </backend>
+    <outbound>
+        <include-fragment fragment-id="genericNodiniteLoggingPolicyFragment" />
+    </outbound>
+    <on-error>
+        <include-fragment fragment-id="genericNodiniteLoggingPolicyFragment" />
+    </on-error>
+</policies>

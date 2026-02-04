@@ -1,0 +1,38 @@
+name: 'Deploy Logic App Standard Workflows'
+description: 'Checks for Logic App Standard existence and deploys workflows if present.'
+inputs:
+  logicapp_definition:
+    description: 'Path to the Logic App Standard workspace folder containing workflows, connections.json, host.json, etc.'
+    required: true
+  RG_NAME:
+    description: 'Resource group name'
+    required: true
+  LOGIC_APP_STANDARD_NAME:
+    description: 'Logic App Standard name'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Check if Logic App Standard exists
+      id: check_logic_app
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.LOGIC_APP_STANDARD_NAME }}" ]; then
+          az functionapp show --resource-group ${{ inputs.RG_NAME }} --name ${{ inputs.LOGIC_APP_STANDARD_NAME }} > /dev/null 2>&1 && echo "exists=true" >> $GITHUB_OUTPUT || echo "exists=false" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+    - name: Deploy Logic App Standard Workspace
+      if: steps.check_logic_app.outputs.exists == 'true'
+      shell: bash
+      run: |
+        # Create a zip file from the workspace
+        cd ${{ inputs.logicapp_definition }}
+        zip -r ../logicapp-workspace.zip . -x "*.git*" "node_modules/*" ".vscode/*"
+        cd ..
+        
+        # Deploy the workspace using ZIP deployment
+        az functionapp deployment source config-zip \
+          --resource-group ${{ inputs.RG_NAME }} \
+          --name ${{ inputs.LOGIC_APP_STANDARD_NAME }} \
+          --src logicapp-workspace.zip

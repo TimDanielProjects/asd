@@ -1,0 +1,35 @@
+name: 'Set RBAC Role for Storage Account Blob Access'
+description: 'Assigns Storage Blob Data Contributor role to the specified principal for the storage account.'
+runs:
+  using: 'composite'
+  steps:
+    - name: Set RBAC role for storage account blob access
+      shell: bash
+      run: |
+        chmod +x publish/generic-script-files/SetRBACRole.sh
+        publish/generic-script-files/SetRBACRole.sh \
+          "${{ inputs.resource_group }}" \
+          "${{ inputs.storage_account_name }}" \
+          "${{ inputs.client_id }}" \
+          "${{ inputs.subscription_id }}" \
+          "${{ inputs.tenant_id }}" \
+          "${{ inputs.client_secret }}"
+inputs:
+  client_id:
+    description: 'Service principal client (application) ID.'
+    required: true
+  client_secret:
+    description: 'Service principal client secret.'
+    required: true
+  tenant_id:
+    description: 'Azure tenant ID.'
+    required: true
+  subscription_id:
+    description: 'Azure subscription ID.'
+    required: true
+  resource_group:
+    description: 'Resource group name.'
+    required: true
+  storage_account_name:
+    description: 'Storage account name.'
+    required: true

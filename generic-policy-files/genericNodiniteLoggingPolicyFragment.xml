@@ -1,0 +1,118 @@
+<fragment>
+    <!-- Start Logging:
+      Possible parameter variables:
+        logApiBackendType: int (71=Client, not Backend/73=Logic App/85=HTTP/86=HTTPS/87=REST API/88=Web API)
+        logApiCustomUri: string
+        logApiText: string
+        logApiStatus: int
+      Output variables after use:
+        logApiDefaultBackendType: int (71=Client, not Backend/85=HTTP/86=HTTPS/87=REST API/88=Web API)
+        logApiDefaultUri: string
+    -->
+    <!-- Get/create a tracking/correlation ID: -->
+    <set-header name="x-ms-client-tracking-id" exists-action="skip">
+        <value>@(Guid.NewGuid().ToString())</value>
+    </set-header>
+    <set-variable name="logApiDefaultBackendType" value="@(71)" />
+    <set-variable name="logApiDefaultUri" value="@(
+        string.Format(
+            &quot;{0} {1}://{2}{3}/{4}{5}&quot;,
+            context.Request.Method,
+            context.Request.OriginalUrl.Scheme,
+            context.Request.OriginalUrl.Host,
+            context.Api.Path,
+            context.Api.Version,
+            context.Operation.UrlTemplate
+        ))" />
+    <send-one-way-request mode="new" timeout="20">
+        <set-url>@($&quot;{{logging-blob-url}}{Guid.NewGuid().ToString()}.json&quot;)</set-url>
+        <set-method>PUT</set-method>
+        <set-header name="x-ms-version" exists-action="override">
+            <value>2019-07-07</value>
+        </set-header>
+        <set-header name="x-ms-blob-type" exists-action="override">
+            <value>BlockBlob</value>
+        </set-header>
+        <set-header name="Content-Type" exists-action="override">
+            <value>application/json</value>
+        </set-header>
+        <set-body>@{
+            var correlationId = context.Request.Headers.GetValueOrDefault(&quot;x-ms-client-tracking-id&quot;) ?? context.Response?.Headers.GetValueOrDefault(&quot;x-ms-client-tracking-id&quot;);
+            var logApiError = (context.LastError != null);
+            var defaultEndpointType = (int)context.Variables[&quot;logApiDefaultBackendType&quot;];
+            var logApiEndPointType = context.Variables.GetValueOrDefault&lt;int&gt;(&quot;logApiBackendType&quot;, defaultEndpointType);
+            var logApiSide = (logApiEndPointType != defaultEndpointType ? &quot;Backend&quot; : &quot;Client&quot;);
+            var logApiDirection = (context.Response?.Body != null ? &quot;Response&quot; : &quot;Request&quot;);
+            var logApiUri = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;logApiCustomUri&quot;, (string)context.Variables[&quot;logApiDefaultUri&quot;]);
+            var logApiText = context.Variables.GetValueOrDefault&lt;string&gt;(
+                &quot;logApiText&quot;,
+                context.LastError?.Message ??
+                    $&quot;API Management {logApiSide.ToLower()} {logApiDirection.ToLower()} {(logApiError ? &quot;error &quot; : &quot;&quot;)}logging in {context.Api.Name} {context.Operation.Name}&quot;
+            );
+            var logApiStatus = context.Variables.GetValueOrDefault&lt;int&gt;(
+                &quot;logApiStatus&quot;,
+                context.Response?.StatusCode ?? 202
+            );
+
+            var body = context.Response?.Body?.As&lt;string&gt;(preserveContent: true) ??
+                       context.Request?.Body?.As&lt;string&gt;(preserveContent: true) ??
+                       &quot;&quot;;
+            var bodyToLog = System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(body));
+
+            Dictionary&lt;string, string&gt; contextProperties = new Dictionary&lt;string, string&gt;();
+            contextProperties.Add(&quot;CorrelationId&quot;, correlationId);
+            contextProperties.Add(&quot;Subscription&quot;, $&quot;{context.Subscription?.Name} ({context.Subscription?.Id})&quot;);
+
+            var headers = context.Request.Headers.Where(h =&gt;
+                !(h.Key.Equals(&quot;Authorization&quot;, StringComparison.InvariantCultureIgnoreCase)
+                || h.Key.Equals(&quot;Ocp-Apim-Subscription-Key&quot;, StringComparison.InvariantCultureIgnoreCase))
+            );
+            foreach (var h in headers) {
+                contextProperties.Add($&quot;Header#{h.Key}&quot;, string.Join(&quot;, &quot;, h.Value));
+            };
+
+            foreach (var p in context.Request.MatchedParameters) {
+                contextProperties.Add($&quot;Parameter#{p.Key}&quot;, string.Join(&quot;, &quot;, p.Value));
+            };
+
+            if (logApiError) {
+                contextProperties.Add(&quot;Error#Source&quot;, context.LastError.Source);
+                contextProperties.Add(&quot;Error#Reason&quot;, context.LastError.Reason);
+                contextProperties.Add(&quot;Error#Message&quot;, context.LastError.Message);
+                contextProperties.Add(&quot;Error#Scope&quot;, context.LastError.Scope);
+                contextProperties.Add(&quot;Error#Section&quot;, context.LastError.Section);
+                contextProperties.Add(&quot;Error#Path&quot;, context.LastError.Path);
+                contextProperties.Add(&quot;Error#PolicyId&quot;, context.LastError.PolicyId);
+            };
+
+            var logMessage = new {
+                LogAgentValueId = 3,
+                EndPointName = $&quot;{context.Api.Id}/{context.Operation.Id}&quot;,
+                EndPointUri = logApiUri,
+                EndPointDirection = (
+                    logApiSide == &quot;Client&quot; &amp;&amp; logApiDirection == &quot;Response&quot; ||
+                    logApiSide == &quot;Backend&quot; &amp;&amp; logApiDirection == &quot;Request&quot; ?
+                    11 : 10
+                ),
+                EndPointTypeId = logApiEndPointType,
+                EventDirection = (
+                    logApiSide == &quot;Client&quot; &amp;&amp; logApiDirection == &quot;Response&quot; ? 25 :
+                    logApiSide == &quot;Backend&quot; &amp;&amp; logApiDirection == &quot;Request&quot; ? 22 :
+                    logApiSide == &quot;Backend&quot; &amp;&amp; logApiDirection == &quot;Response&quot; ? 26 :
+                    21
+                ),
+                OriginalMessageTypeName = $&quot;{context.Operation.Id}#{logApiSide}{(logApiError ? &quot;Error&quot; : logApiDirection)}&quot;,
+                LogDateTime = DateTime.UtcNow,
+                LogStatus = logApiStatus,
+                ApplicationInterchangeId = correlationId,
+                Context = contextProperties,
+                LogText = logApiText,
+                Body = bodyToLog
+            };
+
+            return JsonConvert.SerializeObject(logMessage);
+        }</set-body>
+        <authentication-managed-identity client-id="{{logging-blob-mid-client-id}}" resource="https://storage.azure.com" />
+    </send-one-way-request>
+    <!-- End Logging -->
+</fragment>

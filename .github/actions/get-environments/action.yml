@@ -1,0 +1,27 @@
+name: 'Get GitHub Environments'
+description: 'Retrieves all environments from the GitHub repository'
+
+outputs:
+  names:
+    description: 'JSON array of environment names'
+    value: ${{ steps.set-env.outputs.names }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get environments
+      id: get_env
+      uses: octokit/request-action@v2.3.0
+      with:
+        route: GET /repos/${{ github.repository }}/environments
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        
+    - name: Extract environment names
+      id: set-env
+      shell: bash
+      run: |
+        echo "Extracting environment names from GitHub repository"
+        ENV_NAMES=$(echo '${{ steps.get_env.outputs.data }}' | jq -c '[.environments[].name]')
+        echo "Found environments: $ENV_NAMES"
+        echo "names=$ENV_NAMES" >> $GITHUB_OUTPUT

@@ -1,0 +1,31 @@
+name: 'Copy generic-script-files Content'
+description: 'Copies scripts to the publish directory.'
+inputs:
+  integration_id:
+    description: 'Integration identifier'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.integration_id }}" ]; then
+          echo "Error: integration_id is required"
+          exit 1
+        fi
+    
+    - name: Copy generic-script-files Content
+      shell: bash
+      run: |
+        echo "Copying scripts for integration: ${{ inputs.integration_id }}"
+        mkdir -p "publish/generic-script-files"
+        
+        if [ -d "generic-script-files" ]; then
+          cp -r "generic-script-files"/* "publish/generic-script-files/"
+          echo "✅ Successfully copied generic-script-files"
+        else
+          echo "⚠️ Warning: generic-script-files directory not found"
+          echo "Creating empty scripts directory structure"
+          mkdir -p "publish/generic-script-files"
+        fi

@@ -1,0 +1,31 @@
+name: 'Copy Logic App Standard Workflows'
+description: 'Copies Logic App Standard workflows to the publish directory.'
+inputs:
+  integration_id:
+    description: 'Integration identifier'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.integration_id }}" ]; then
+          echo "Error: integration_id is required"
+          exit 1
+        fi
+    
+    - name: Copy Logic App Standard Workflows
+      shell: bash
+      run: |
+        echo "Copying Logic App Standard workflows for integration: ${{ inputs.integration_id }}"
+        mkdir -p "publish/${{ inputs.integration_id }}/LogicAppWorkspace"
+        
+        if [ -d "${{ inputs.integration_id }}/LogicAppWorkspace" ]; then
+          cp -r "${{ inputs.integration_id }}/LogicAppWorkspace"/* "publish/${{ inputs.integration_id }}/LogicAppWorkspace/"
+          echo "✅ Successfully copied Logic App Standard workflows"
+        else
+          echo "⚠️ Warning: LogicAppStandard directory not found for integration ${{ inputs.integration_id }}"
+          echo "Creating empty LogicAppStandard directory structure"
+          mkdir -p "publish/${{ inputs.integration_id }}/LogicAppWorkspace"
+        fi

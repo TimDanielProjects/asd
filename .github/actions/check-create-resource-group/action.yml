@@ -1,0 +1,20 @@
+name: 'Check for/Create Resource Group'
+description: 'Checks for or creates the specified resource group.'
+runs:
+  using: 'composite'
+  steps:
+    - name: Check for/create resource group
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.resource_location }}" ]; then
+          echo "Error: RESOURCE_LOCATION is not set. Failing early."
+          exit 1
+        fi
+        bash publish/generic-script-files/CheckForResourceGroup.sh ${{ inputs.resource_group }} ${{ inputs.resource_location }}
+inputs:
+  resource_group:
+    description: 'Resource group name.'
+    required: true
+  resource_location:
+    description: 'Resource location.'
+    required: true

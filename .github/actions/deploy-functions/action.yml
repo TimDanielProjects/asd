@@ -1,0 +1,30 @@
+name: 'Deploy Azure Functions'
+description: 'Checks for Function App existence and deploys Azure Functions if present.'
+inputs:
+  functions_package:
+    description: 'Path to the Azure Functions package.'
+    required: true
+  RG_NAME:
+    description: 'Resource group name'
+    required: true
+  FUNCTION_APP_NAME:
+    description: 'Function app name'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Check if Function App exists
+      id: check_function_app
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.FUNCTION_APP_NAME }}" ]; then
+          az functionapp show --name ${{ inputs.FUNCTION_APP_NAME }} --resource-group ${{ inputs.RG_NAME }} > /dev/null 2>&1 && echo "exists=true" >> $GITHUB_OUTPUT || echo "exists=false" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+    - name: Deploy Azure Functions
+      if: steps.check_function_app.outputs.exists == 'true'
+      uses: Azure/functions-action@v1
+      with:
+        app-name: ${{ inputs.FUNCTION_APP_NAME }}
+        package: ${{ inputs.functions_package }}

@@ -1,0 +1,55 @@
+name: bicep-registry-modules - Sync from upstream
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Every Sunday at midnight UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write  # Required for pushing changes to the repository
+
+jobs:
+  sync_subfolder:
+    runs-on: ubuntu-latest
+    env:
+      SUBFOLDER: bicep-registry-modules
+      UPSTREAM_REPO: https://github.com/Azure/bicep-registry-modules.git
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Remove existing subfolder
+        run: |
+          rm -rf $SUBFOLDER
+
+      - name: Clone upstream repo
+        run: |
+          git clone --depth 1 $UPSTREAM_REPO upstream-tmp
+
+      - name: Copy upstream content into subfolder
+        run: |
+          mkdir -p $SUBFOLDER
+          cp -r upstream-tmp/* $SUBFOLDER/
+          cp -r upstream-tmp/.[!.]* $SUBFOLDER/ || true  # Copy dotfiles, ignore errors if none
+
+      - name: Clean up temp folder
+        run: rm -rf upstream-tmp
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          if [[ -n "$(git status --porcelain $SUBFOLDER)" ]]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push if updated
+        if: steps.git-check.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add $SUBFOLDER
+          git commit -m "chore: sync $SUBFOLDER from upstream"
+          git push

@@ -1,0 +1,76 @@
+name: Reusable workflow - Build Integration Environment
+on:
+  workflow_call:
+    inputs:
+      integration_id:
+        description: 'Integration identifier.'
+        required: true
+        type: string
+    outputs:
+      publish-path:
+        description: 'Path to the published build artifacts.'
+        value: ${{ jobs.build.outputs.publish-path }}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      publish-path: ${{ steps.set-publish-path.outputs.publish-path }}
+    steps:
+      # Checkout the whole repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Use composite action to copy deployment content
+      - name: Copy Deployment Content
+        uses: ./.github/actions/copy-deployment
+        with:
+          integration_id: ${{ inputs.integration_id }}
+
+      # Use composite action to copy scripts
+      - name: Copy generic-script-files Content
+        uses: ./.github/actions/copy-scripts
+        with:
+          integration_id: ${{ inputs.integration_id }}
+
+      # Use composite action to copy bicep registry modules and bicep helper modules
+      - name: Copy Bicep Registry Modules and Helper Modules
+        uses: ./.github/actions/copy-bicep-modules
+        with:
+          integration_id: ${{ inputs.integration_id }}
+
+      # Use composite action to copy policy files
+      - name: Copy Policy Files
+        uses: ./.github/actions/copy-policies
+        with:
+          integration_id: ${{ inputs.integration_id }}
+
+      # Use composite action to copy .github workflows and actions
+      - name: Copy Workflows and Actions
+        uses: ./.github/actions/copy-.github
+        with:
+          integration_id: ${{ inputs.integration_id }}
+
+      # Use composite action to copy Logic App Standard workflows
+      - name: Copy Logic App Standard Workflows
+        uses: ./.github/actions/copy-logicapp-workflows
+        with:
+          integration_id: ${{ inputs.integration_id }}
+
+      # Use composite action to copy Azure Functions
+      - name: Copy Azure Functions
+        uses: ./.github/actions/copy-functions
+        with:
+          integration_id: ${{ inputs.integration_id }}
+
+      - name: Set publish path output
+        id: set-publish-path
+        run: echo "publish-path=publish" >> $GITHUB_OUTPUT
+
+      # Upload build artifacts for use in deployment
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-artifacts-${{ inputs.integration_id }}
+          path: publish/
+          retention-days: 30
+          include-hidden-files: true

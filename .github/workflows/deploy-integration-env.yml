@@ -1,0 +1,160 @@
+name: Reusable workflow - Deploy Integration Environment
+on:
+  workflow_call:
+    inputs:
+      integration_id:
+        required: true
+        type: string
+      bicep_file:
+        required: true
+        type: string
+      functions_package:
+        required: true
+        type: string
+      logicapp_definition:
+        required: true
+        type: string
+
+jobs:
+  prepare-environments:
+    runs-on: ubuntu-latest
+    outputs:
+      names: ${{ steps.get-envs.outputs.names }}
+    steps:
+      # Download build artifacts from build job
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: integration-artifacts-${{ inputs.integration_id }}
+          path: ./publish
+
+      - name: Get environments
+        id: get-envs
+        uses: ./publish/.github/actions/get-environments
+      
+  
+  approve-and-deploy:
+    needs: prepare-environments
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.prepare-environments.outputs.names) }}
+    environment:
+      name: ${{ matrix.environment }}
+    steps:
+      - name: Require approval for ${{ matrix.environment }}
+        id: approval
+        uses: trstringer/manual-approval@v1
+        continue-on-error: true
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: ${{ github.actor }}
+          
+      - name: Handle approval denial
+        run: |
+          echo "::notice::Deployment to ${{ matrix.environment }} was denied by approver"
+          echo "::warning::Canceling workflow for ${{ matrix.environment }} environment due to approval denial"
+          exit 0
+          
+      # Download build artifacts from build job
+      - name: Download build artifacts
+        if: ${{ steps.approval.outcome != 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: integration-artifacts-${{ inputs.integration_id }}
+          path: ./publish
+
+      - name: Azure Login and Environment Setup
+        id: login_setup
+        if: ${{ steps.approval.outcome != 'failure' }}
+        uses: ./publish/.github/actions/azure-login-env-setup
+        with:
+          azure_credentials: ${{ secrets.AZURE_CREDENTIALS }}
+          env_suffix: ${{ matrix.environment }}
+          ORGANISATION_SUFFIX: ${{ vars.ORGANISATION_SUFFIX }}
+          REGION_SUFFIX: ${{ vars.REGION_SUFFIX }}
+          integration_id: ${{ inputs.integration_id }}
+
+      - name: Register Azure Resource Providers
+        if: ${{ steps.approval.outcome != 'failure' }}
+        uses: ./publish/.github/actions/register-resource-providers
+
+      # Validate deployment files exist
+      - name: Validate deployment files
+        if: ${{ steps.approval.outcome != 'failure' }}
+        id: validate_files
+        run: |
+          echo "Validating deployment files for integration: ${{ inputs.integration_id }}"
+
+          # Check Bicep file
+          if [ -f "./publish/${{ inputs.bicep_file }}" ]; then
+            echo "✅ Bicep file found: publish/${{ inputs.bicep_file }}"
+            echo "has_bicep=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Bicep file not found: publish/${{ inputs.bicep_file }}"
+            echo "has_bicep=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Check Functions package
+          if [ -d "./publish/${{ inputs.functions_package }}" ]; then
+            echo "✅ Functions package found: publish/${{ inputs.functions_package }}"
+            echo "has_functions=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Functions package not found: publish/${{ inputs.functions_package }}"
+            echo "has_functions=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Check Logic App definition
+          if [ -d "./publish/${{ inputs.logicapp_definition }}" ]; then
+            echo "✅ Logic App definition found: publish/${{ inputs.logicapp_definition }}"
+            echo "has_logicapp=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Logic App definition not found: publish/${{ inputs.logicapp_definition }}"
+            echo "has_logicapp=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Deploy shared integration environment if integration_id is 'shared'
+      - name: Deploy shared using actions 
+        if: ${{ inputs.integration_id == 'shared' && steps.approval.outcome != 'failure' }}
+        uses: ./publish/.github/actions/deploy-shared
+        with:
+          env_suffix: ${{ matrix.environment }}
+          integration_id: ${{ inputs.integration_id }}
+          ORGANISATION_SUFFIX: ${{ vars.ORGANISATION_SUFFIX }}
+          REGION_SUFFIX: ${{ vars.REGION_SUFFIX }}
+          RESOURCE_LOCATION: ${{ vars.RESOURCE_LOCATION }}
+          APPLICATION_INSIGHTS_LOGGING_ENABLED: ${{ vars.APPLICATION_INSIGHTS_LOGGING_ENABLED }}
+          NODINITE_LOGGING_ENABLED: ${{ vars.NODINITE_LOGGING_ENABLED }}
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Deploy integration environment resources
+      - name: Deploy Bicep Template
+        if: ${{ steps.validate_files.outputs.has_bicep == 'true' && steps.approval.outcome != 'failure' }}
+        id: deploy_bicep
+        uses: ./publish/.github/actions/deploy-bicep
+        with:
+          bicep_file: publish/${{ inputs.bicep_file }}
+          ENV_SUFFIX: ${{ matrix.environment }}
+          REGION_SUFFIX: ${{ vars.REGION_SUFFIX }}
+          ORGANISATION_SUFFIX: ${{ vars.ORGANISATION_SUFFIX }}
+          integration_id: ${{ inputs.integration_id }}
+          APPLICATION_INSIGHTS_LOGGING_ENABLED: ${{ vars.APPLICATION_INSIGHTS_LOGGING_ENABLED }}
+          NODINITE_LOGGING_ENABLED: ${{ vars.NODINITE_LOGGING_ENABLED }}
+          RESOURCE_LOCATION: ${{ vars.RESOURCE_LOCATION }}
+          RG_NAME: ${{ steps.login_setup.outputs.RG_NAME }}
+
+      - name: Deploy Azure Functions
+        if: ${{ steps.validate_files.outputs.has_functions == 'true' && steps.deploy_bicep.outputs.FUNCTION_APP_NAME != '' && steps.approval.outcome != 'failure' }}
+        uses: ./publish/.github/actions/deploy-functions
+        with:
+          functions_package: publish/${{ inputs.functions_package }}
+          RG_NAME: ${{ steps.login_setup.outputs.RG_NAME }}
+          FUNCTION_APP_NAME: ${{ steps.deploy_bicep.outputs.FUNCTION_APP_NAME }}
+
+      - name: Deploy Logic App Standard Workflows
+        if: ${{ steps.validate_files.outputs.has_logicapp == 'true' && steps.deploy_bicep.outputs.LOGIC_APP_STANDARD_NAME != '' && steps.approval.outcome != 'failure' }}
+        uses: ./publish/.github/actions/deploy-logicapp
+        with:
+          logicapp_definition: publish/${{ inputs.logicapp_definition }}
+          RG_NAME: ${{ steps.login_setup.outputs.RG_NAME }}
+          LOGIC_APP_STANDARD_NAME: ${{ steps.deploy_bicep.outputs.LOGIC_APP_STANDARD_NAME }}

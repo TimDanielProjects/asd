@@ -1,0 +1,49 @@
+name: 'Copy Bicep Modules'
+description: 'Copies bicep registry modules and helper modules (including dotfiles) to the publish directory.'
+inputs:
+  integration_id:
+    description: 'Integration identifier'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.integration_id }}" ]; then
+          echo "Error: integration_id is required"
+          exit 1
+        fi
+    
+    - name: Copy Bicep Modules
+      shell: bash
+      run: |
+        echo "Copying bicep modules for integration: ${{ inputs.integration_id }}"
+        
+        # Copy Bicep Registry Modules
+        mkdir -p "publish/bicep-registry-modules"
+        if [ -d "bicep-registry-modules" ]; then
+          # Copy visible files and directories
+          cp -r "bicep-registry-modules"/* "publish/bicep-registry-modules/" 2>/dev/null || true
+          # Copy hidden files (dotfiles) safely
+          find "bicep-registry-modules" -maxdepth 1 -name ".*" -not -name "." -not -name ".." -exec cp -r {} "publish/bicep-registry-modules/" \; 2>/dev/null || true
+          echo "✅ Successfully copied bicep registry modules"
+        else
+          echo "⚠️ Warning: bicep-registry-modules directory not found"
+          echo "Creating empty bicep-registry-modules directory structure"
+          mkdir -p "publish/bicep-registry-modules"
+        fi
+        
+        # Copy Bicep Helper Modules
+        mkdir -p "publish/bicep-helper-modules"
+        if [ -d "bicep-helper-modules" ]; then
+          # Copy visible files and directories
+          cp -r "bicep-helper-modules"/* "publish/bicep-helper-modules/" 2>/dev/null || true
+          # Copy hidden files (dotfiles) safely
+          find "bicep-helper-modules" -maxdepth 1 -name ".*" -not -name "." -not -name ".." -exec cp -r {} "publish/bicep-helper-modules/" \; 2>/dev/null || true
+          echo "✅ Successfully copied bicep helper modules"
+        else
+          echo "⚠️ Warning: bicep-helper-modules directory not found"
+          echo "Creating empty bicep-helper-modules directory structure"
+          mkdir -p "publish/bicep-helper-modules"
+        fi

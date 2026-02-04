@@ -1,0 +1,31 @@
+name: 'Copy Deployment Content'
+description: 'Copies integration deployment content to the publish directory.'
+inputs:
+  integration_id:
+    description: 'Integration identifier'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.integration_id }}" ]; then
+          echo "Error: integration_id is required"
+          exit 1
+        fi
+    
+    - name: Copy Deployment Content
+      shell: bash
+      run: |
+        echo "Copying deployment content for integration: ${{ inputs.integration_id }}"
+        mkdir -p "publish/${{ inputs.integration_id }}/Deployment"
+        
+        if [ -d "${{ inputs.integration_id }}/Deployment" ]; then
+          cp -r "${{ inputs.integration_id }}/Deployment"/* "publish/${{ inputs.integration_id }}/Deployment/"
+          echo "✅ Successfully copied deployment content"
+        else
+          echo "⚠️ Warning: Deployment directory not found for integration ${{ inputs.integration_id }}"
+          echo "Creating empty deployment directory structure"
+          mkdir -p "publish/${{ inputs.integration_id }}/Deployment"
+        fi

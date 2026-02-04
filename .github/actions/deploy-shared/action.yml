@@ -1,0 +1,103 @@
+name: 'Deploy Shared Integration Environment'
+description: 'Deploys shared integration environment resources including resource group, storage account, and key vault'
+
+inputs:
+  env_suffix:
+    description: 'Environment suffix'
+    required: true
+  integration_id:
+    description: 'Integration identifier'
+    required: true
+  ORGANISATION_SUFFIX:
+    description: 'Organisation suffix'
+    required: true
+  REGION_SUFFIX:
+    description: 'Region suffix'
+    required: true
+  RESOURCE_LOCATION:
+    description: 'Azure resource location'
+    required: true
+  APPLICATION_INSIGHTS_LOGGING_ENABLED:
+    description: 'Whether Application Insights logging is enabled'
+    required: true
+  NODINITE_LOGGING_ENABLED:
+    description: 'Whether Nodinite logging is enabled'
+    required: true
+  AZURE_CREDENTIALS:
+    description: 'Azure credentials JSON'
+    required: true
+
+outputs:
+  RG_NAME:
+    description: 'The name of the created resource group'
+    value: ${{ steps.set_rg.outputs.RG_NAME }}
+  STORAGE_ACCOUNT_NAME:
+    description: 'The name of the created storage account'
+    value: ${{ steps.setup_deploy.outputs.STORAGE_ACCOUNT_NAME }}
+  KEY_VAULT_NAME:
+    description: 'The name of the created key vault'
+    value: ${{ steps.setup_deploy.outputs.KEY_VAULT_NAME }}
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Set resource group name
+      id: set_rg
+      shell: bash
+      run: |
+        RG_NAME="${{ inputs.ORGANISATION_SUFFIX }}-int-${{ inputs.integration_id }}-rg-${{ inputs.REGION_SUFFIX }}-${{ inputs.env_suffix }}"
+        echo "RG_NAME=$RG_NAME" >> $GITHUB_OUTPUT
+
+    - name: Parse Azure credentials
+      id: parse_credentials
+      shell: bash
+      run: |
+        CREDS='${{ inputs.AZURE_CREDENTIALS }}'
+        echo "CLIENT_ID=$(echo $CREDS | jq -r .clientId)" >> $GITHUB_OUTPUT
+        echo "CLIENT_SECRET=$(echo $CREDS | jq -r .clientSecret)" >> $GITHUB_OUTPUT
+        echo "TENANT_ID=$(echo $CREDS | jq -r .tenantId)" >> $GITHUB_OUTPUT
+        echo "SUBSCRIPTION_ID=$(echo $CREDS | jq -r .subscriptionId)" >> $GITHUB_OUTPUT
+
+    - name: Check for/create resource group
+      uses: ./publish/.github/actions/check-create-resource-group
+      with:
+        resource_group: ${{ steps.set_rg.outputs.RG_NAME }}
+        resource_location: ${{ inputs.RESOURCE_LOCATION }}
+
+    - name: Deploy Setup.bicep and capture outputs
+      id: setup_deploy
+      uses: ./publish/.github/actions/deploy-setup-bicep
+      with:
+        resource_group: ${{ steps.set_rg.outputs.RG_NAME }}
+        template_file: publish/${{ inputs.integration_id }}/Deployment/Bicep/Setup.bicep
+        environment_suffix: ${{ inputs.env_suffix }}
+        region_suffix: ${{ inputs.REGION_SUFFIX }}
+        organisation_suffix: ${{ inputs.ORGANISATION_SUFFIX }}
+        integration_id: ${{ inputs.integration_id }}
+
+    - name: Check for/create storage account
+      uses: ./publish/.github/actions/check-create-storage-account
+      with:
+        resource_group: ${{ steps.set_rg.outputs.RG_NAME }}
+        storage_account_name: ${{ steps.setup_deploy.outputs.storageAccountName }}
+        resource_location: ${{ inputs.RESOURCE_LOCATION }}
+
+    - name: Set RBAC role for storage account blob access
+      uses: ./publish/.github/actions/set-storage-rbac
+      with:
+        client_id: ${{ steps.parse_credentials.outputs.CLIENT_ID }}
+        client_secret: ${{ steps.parse_credentials.outputs.CLIENT_SECRET }}
+        tenant_id: ${{ steps.parse_credentials.outputs.TENANT_ID }}
+        subscription_id: ${{ steps.parse_credentials.outputs.SUBSCRIPTION_ID }}
+        resource_group: ${{ steps.set_rg.outputs.RG_NAME }}
+        storage_account_name: ${{ steps.setup_deploy.outputs.storageAccountName }}
+
+    - name: Check for/create KeyVault
+      uses: ./publish/.github/actions/check-create-keyvault
+      with:
+        resource_group: ${{ steps.set_rg.outputs.RG_NAME }}
+        keyvault_name: ${{ steps.setup_deploy.outputs.keyVaultName }}
+        resource_location: ${{ inputs.RESOURCE_LOCATION }}
+
+

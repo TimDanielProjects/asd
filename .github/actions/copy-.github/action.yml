@@ -1,0 +1,31 @@
+name: 'Copy Workflows and actions Content'
+description: 'Copies .github to the publish directory.'
+inputs:
+  integration_id:
+    description: 'Integration identifier'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.integration_id }}" ]; then
+          echo "Error: integration_id is required"
+          exit 1
+        fi
+    
+    - name: Copy Workflows and actions Content
+      shell: bash
+      run: |
+        echo "Copying workflows and actions for integration: ${{ inputs.integration_id }}"
+        mkdir -p "publish/.github"
+        
+        if [ -d ".github" ]; then
+          cp -r ".github"/* "publish/.github/"
+          echo "✅ Successfully copied .github"
+        else
+          echo "⚠️ Warning: .github directory not found"
+          echo "Creating empty .github directory structure"
+          mkdir -p "publish/.github"
+        fi
