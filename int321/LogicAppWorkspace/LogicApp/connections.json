@@ -1,0 +1,121 @@
+{
+  "apiManagementConnections": {
+    "apiManagementOperation": {
+      "apiId": "@appsetting('apiId')",
+      "baseUrl": "@appsetting('apiBaseUrl')",
+      "displayName": "@appsetting('apiDisplayName')",
+      "subscriptionKey": "@appsetting('apimSubscriptionKey')"
+    }
+  },
+  "functionConnections": {
+    "azureFunction": {
+      "authentication": {
+        "name": "Code",
+        "type": "QueryString",
+        "value": "@appsetting('azureFunctionsKey')"
+      },
+      "displayName": "@appsetting('functionName')",
+      "function": {
+        "id": "@appsetting('functionId')"
+      },
+      "triggerUrl": "@appsetting('functionTriggerUrl')"
+    }
+  },
+  "managedApiConnections": {
+    "filesystem": {
+      "api": {
+        "id": "/subscriptions/@appsetting('subscriptionId')/providers/Microsoft.Web/locations/@appsetting('location')/managedApis/filesystem"
+      },
+      "authentication": {
+        "type": "ManagedServiceIdentity"
+      },
+      "connection": {
+        "id": "/subscriptions/@appsetting('subscriptionId')/resourceGroups/@appsetting('resourceGroupName')/providers/Microsoft.Web/connections/filesystem"
+      },
+      "connectionRuntimeUrl": "@appsetting('ConnectionRuntimeUrl')"
+    }
+  },
+  "serviceProviderConnections": {
+    "AzureBlob": {
+      "displayName": "blobStorageConnection",
+      "parameterSetName": "ManagedServiceIdentity",
+      "parameterValues": {
+        "authProvider": {
+          "Type": "ManagedServiceIdentity"
+        },
+        "blobStorageEndpoint": "@appsetting('storageAccount_blobStorageEndpoint')"
+      },
+      "serviceProvider": {
+        "id": "/serviceProviders/AzureBlob"
+      }
+    },
+    "AzureFile": {
+      "displayName": "fileshareConnection",
+      "parameterSetName": "ManagedServiceIdentity",
+      "parameterValues": {
+        "authProvider": {
+          "Type": "ManagedServiceIdentity"
+        },
+        "storageAccountUri": "@appsetting('storageAccount_fileshareEndpoint')"
+      },
+      "serviceProvider": {
+        "id": "/serviceProviders/AzureFile"
+      }
+    },
+    "azureTables": {
+      "displayName": "tableConnection",
+      "parameterSetName": "ManagedServiceIdentity",
+      "parameterValues": {
+        "authProvider": {
+          "Type": "ManagedServiceIdentity"
+        },
+        "tableStorageEndpoint": "@appsetting('storageAccount_tableStorageEndpoint')"
+      },
+      "serviceProvider": {
+        "id": "/serviceProviders/azureTables"
+      }
+    },
+    "serviceBus": {
+      "displayName": "serviceBusConnection",
+      "parameterSetName": "ManagedServiceIdentity",
+      "parameterValues": {
+        "authProvider": {
+          "Type": "ManagedServiceIdentity"
+        },
+        "fullyQualifiedNamespace": "@appsetting('serviceBus_fullyQualifiedNamespace')"
+      },
+      "serviceProvider": {
+        "id": "/serviceProviders/serviceBus"
+      }
+    },
+    "sql": {
+      "displayName": "sqlConnection",
+      "parameterSetName": "ManagedServiceIdentity",
+      "parameterValues": {
+        "authProvider": {
+          "Type": "ManagedServiceIdentity"
+        },
+        "databaseName": "@appsetting('databaseName')",
+        "managedIdentityType": "SystemAssigned",
+        "serverName": "@appsetting('serverName')"
+      },
+      "serviceProvider": {
+        "id": "/serviceProviders/sql"
+      }
+    },
+    "Sftp": {
+      "displayName": "sftpConnection",
+      "parameterValues": {
+        "disableConnectionCache": "@appsetting('Sftp_disableConnectionCache')",
+        "password": "@appsetting('Sftp_password')",
+        "portNumber": "@appsetting('Sftp_portNumber')",
+        "rootDirectory": "@appsetting('Sftp_rootDirectory')",
+        "sshHostAddress": "@appsetting('Sftp_sshHostAddress')",
+        "username": "@appsetting('Sftp_username')"
+      },
+      "serviceProvider": {
+        "id": "/serviceProviders/Sftp"
+      }
+    }
+  }
+}
