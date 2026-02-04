@@ -1,0 +1,74 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <TargetFramework>net8</TargetFramework>
+    <AzureFunctionsVersion>v4</AzureFunctionsVersion>
+    <OutputType>Exe</OutputType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <LogicAppFolder>LogicApp</LogicAppFolder>
+    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <SelfContained>false</SelfContained>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.24.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.3.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Timer" Version="4.3.1" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="2.0.2" />
+    <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.23.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.ApplicationInsights" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Core" Version="3.0.41" />
+    <PackageReference Include="Microsoft.Azure.Workflows.WebJobs.Sdk" Version="1.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.3" />
+    <PackageReference Include="Nodinite.Serilog.AzureBlobStorageSink" Version="2.0.29" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="host.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="local.settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="System.Threading.ExecutionContext" Alias="ExecutionContext" />
+  </ItemGroup>
+  
+  <Target Name="Task" AfterTargets="Compile">
+    <ItemGroup>
+      <DirsToClean2 Include="..\$(LogicAppFolder)\lib\custom" />
+    </ItemGroup>
+    <RemoveDir Directories="@(DirsToClean2)" />
+  </Target>
+
+  <Target Name="CopyExtensionFiles" AfterTargets="ParameterizedFunctionJsonGeneratorNetCore">
+    <ItemGroup>
+      <CopyFiles Include="$(MSBuildProjectDirectory)\bin\$(Configuration)\net8\**\*.*" CopyToOutputDirectory="PreserveNewest" Exclude="$(MSBuildProjectDirectory)\bin\$(Configuration)\net8\*.*" />
+      <CopyFiles2 Include="$(MSBuildProjectDirectory)\bin\$(Configuration)\net8\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(CopyFiles)" DestinationFolder="..\$(LogicAppFolder)\lib\custom\%(RecursiveDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(CopyFiles2)" DestinationFolder="..\$(LogicAppFolder)\lib\custom\net8\" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <MoveFiles Include="..\$(LogicAppFolder)\lib\custom\bin\*.*" />
+    </ItemGroup>
+    <Move SourceFiles="@(MoveFiles)" DestinationFolder="..\$(LogicAppFolder)\lib\custom\net8" />
+    <ItemGroup>
+      <DirsToClean Include="..\$(LogicAppFolder)\lib\custom\bin" />
+    </ItemGroup>
+    <RemoveDir Directories="@(DirsToClean)" />
+  </Target>
+
+  <ItemGroup>
+    <Folder Include="bin\$(Configuration)\net8\" />
+  </ItemGroup>
+</Project>

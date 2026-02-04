@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "LogicAppWorkspace", "LogicAppWorkspace", "{518C0222-98D0-FCB0-067A-CDA7CB4BDB0E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Function", "LogicAppWorkspace\Function\Function.csproj", "{3128C58C-1B08-34EE-41E1-5ED4A8A6C685}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3128C58C-1B08-34EE-41E1-5ED4A8A6C685}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3128C58C-1B08-34EE-41E1-5ED4A8A6C685}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3128C58C-1B08-34EE-41E1-5ED4A8A6C685}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3128C58C-1B08-34EE-41E1-5ED4A8A6C685}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{3128C58C-1B08-34EE-41E1-5ED4A8A6C685} = {518C0222-98D0-FCB0-067A-CDA7CB4BDB0E}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EC2BB885-5444-4FAF-91E8-31CE13E3364A}
+	EndGlobalSection
+EndGlobal
